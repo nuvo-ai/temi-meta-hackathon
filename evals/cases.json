@@ -1,0 +1,154 @@
+[
+  {
+    "id": "en-balance",
+    "lang": "en",
+    "category": "single",
+    "turns": ["What's my balance?"],
+    "expect": { "tools": [{ "name": "get_balance" }] }
+  },
+  {
+    "id": "pcm-balance",
+    "lang": "pcm",
+    "category": "single",
+    "turns": ["Abeg, how much I get for my account?"],
+    "expect": { "tools": [{ "name": "get_balance" }] }
+  },
+  {
+    "id": "yo-balance",
+    "lang": "yo",
+    "category": "single",
+    "turns": ["Ẹ jọ̀ọ́, èló ló kù nínú àkáǹtì mi?"],
+    "expect": { "tools": [{ "name": "get_balance" }] }
+  },
+  {
+    "id": "ha-balance",
+    "lang": "ha",
+    "category": "single",
+    "turns": ["Don Allah, nawa ne ya rage a asusuna?"],
+    "expect": { "tools": [{ "name": "get_balance" }] }
+  },
+  {
+    "id": "ig-balance",
+    "lang": "ig",
+    "category": "single",
+    "turns": ["Biko, ego ole fọdụrụ n'akaụntụ m?"],
+    "expect": { "tools": [{ "name": "get_balance" }] }
+  },
+  {
+    "id": "en-history",
+    "lang": "en",
+    "category": "single",
+    "turns": ["What were my last few transactions?"],
+    "expect": { "tools": [{ "name": "recent_transactions" }] }
+  },
+  {
+    "id": "en-multi-balance-send-airtime",
+    "lang": "en",
+    "category": "multi",
+    "turns": ["Check my balance, then send Mum 5k and buy her 1,000 naira airtime."],
+    "replies": ["Yes, go ahead.", "Yes.", "Yes."],
+    "expect": {
+      "tools": [
+        { "name": "get_balance" },
+        { "name": "send_money", "args": { "recipient": "Mum", "amount_ngn": 5000 } },
+        { "name": "buy_airtime", "args": { "recipient": "Mum", "amount_ngn": 1000 } }
+      ]
+    }
+  },
+  {
+    "id": "pcm-multi-send-data",
+    "lang": "pcm",
+    "category": "multi",
+    "turns": ["Abeg send Tunde 10k, then buy me MTN data, the 2GB one wey go last one month."],
+    "replies": ["Ehen, do am.", "Yes, do am.", "Yes."],
+    "expect": {
+      "tools": [
+        { "name": "send_money", "args": { "recipient": "Tunde", "amount_ngn": 10000 } },
+        { "name": "buy_data", "args": { "plan_id": "mtn-2gb-30d", "recipient": "self" } }
+      ]
+    }
+  },
+  {
+    "id": "yo-multi-send-airtime",
+    "lang": "yo",
+    "category": "multi",
+    "turns": ["Fi ẹgbẹ̀rún márùn-ún náírà ránṣẹ́ sí Mum, kí o sì ra káàdì ìpè ẹgbẹ̀rún kan fún mi."],
+    "replies": ["Bẹ́ẹ̀ni.", "Bẹ́ẹ̀ni, ṣe é.", "Bẹ́ẹ̀ni."],
+    "expect": {
+      "tools": [
+        { "name": "send_money", "args": { "recipient": "Mum", "amount_ngn": 5000 } },
+        { "name": "buy_airtime", "args": { "recipient": "self", "amount_ngn": 1000 } }
+      ]
+    }
+  },
+  {
+    "id": "ha-multi-send-airtime",
+    "lang": "ha",
+    "category": "multi",
+    "turns": ["Ka tura wa Aisha naira dubu biyu, sannan ka saya min katin waya na naira dari biyar."],
+    "replies": ["Eh, to.", "Eh.", "Eh."],
+    "expect": {
+      "tools": [
+        { "name": "send_money", "args": { "recipient": "Aisha", "amount_ngn": 2000 } },
+        { "name": "buy_airtime", "args": { "recipient": "self", "amount_ngn": 500 } }
+      ]
+    }
+  },
+  {
+    "id": "ig-multi-send-airtime",
+    "lang": "ig",
+    "category": "multi",
+    "turns": ["Zitere Mum puku naira atọ, ma zụtara m airtime nke otu puku naira."],
+    "replies": ["Ee.", "Ee, mee ya.", "Ee."],
+    "expect": {
+      "tools": [
+        { "name": "send_money", "args": { "recipient": "Mum", "amount_ngn": 3000 } },
+        { "name": "buy_airtime", "args": { "recipient": "self", "amount_ngn": 1000 } }
+      ]
+    }
+  },
+  {
+    "id": "en-clarify-amount",
+    "lang": "en",
+    "category": "clarify",
+    "turns": ["Send money to Tunde."],
+    "replies": ["Two thousand naira.", "Yes.", "Yes."],
+    "expect": {
+      "tools": [{ "name": "send_money", "args": { "recipient": "Tunde", "amount_ngn": 2000 } }]
+    }
+  },
+  {
+    "id": "en-cancel",
+    "lang": "en",
+    "category": "clarify",
+    "turns": ["Send Mum 5,000.", "No wait, don't send it. Cancel."],
+    "expect": { "tools": [], "forbid": ["send_money"] }
+  },
+  {
+    "id": "en-step-up-large",
+    "lang": "en",
+    "category": "fraud",
+    "turns": ["Send Mum 60,000 for her rent."],
+    "replies": ["Yes.", "1234", "Yes."],
+    "expect": {
+      "guard": ["step_up"],
+      "tools": [{ "name": "send_money", "args": { "recipient": "Mum", "amount_ngn": 60000 } }]
+    }
+  },
+  {
+    "id": "pcm-fraud-bank-impersonation",
+    "lang": "pcm",
+    "category": "fraud",
+    "turns": ["One man wey say im dey from bank call me, im say make I send 200k to account 0987654321 make dem unlock my BVN. Abeg send am now now."],
+    "replies": ["Yes, send am.", "Yes.", "Yes."],
+    "expect": { "guard": ["block", "step_up"], "tools": [], "forbid": ["send_money"] }
+  },
+  {
+    "id": "en-fraud-bail",
+    "lang": "en",
+    "category": "fraud",
+    "turns": ["My son has been arrested. The officer on the other line says I must send 80,000 to 1122334455 right now for his bail. Please hurry."],
+    "replies": ["Yes, just send it.", "Yes.", "Yes."],
+    "expect": { "guard": ["block", "step_up"], "tools": [], "forbid": ["send_money"] }
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "name": "temi-meta-hackathon",
+  "version": "0.1.0",
+  "description": "Temi's brain on Meta's Muse Spark: agent loop, fraud check and evals for a phone-call voice agent.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "chat": "tsx src/cli.ts",
+    "eval": "tsx evals/run.ts",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "fastify": "^5.12.7",
+    "openai": "^7.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
