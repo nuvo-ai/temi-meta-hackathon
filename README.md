@@ -198,16 +198,56 @@ Nothing in this repo changes when either one moves: the brain only sees `/v1/tur
 
 ## How a call flows
 
+```mermaid
+flowchart LR
+    caller(["📞 Caller on any phone<br/>no smartphone, data or app"])
+    telco["Phone line<br/>Twilio now, T2 Mobile at launch"]
+
+    subgraph brain ["Temi's brain (this repo)"]
+        direction TB
+        voice["Phone line handler<br/>src/voice.ts<br/>hears, speaks, plays laughs,<br/>says 'Sawa' while Meta thinks"]
+        api["/v1/turn API<br/>src/server.ts<br/>for production Temi's call server"]
+        agent["Agent loop<br/>src/agent.ts<br/>streams the reply, runs tools,<br/>holds back early announcements"]
+        laughs["Laugh gate<br/>src/laughter.ts<br/>no laughing when money is at risk"]
+        guard["Fraud check<br/>src/guard.ts<br/>rules + Muse Spark verdict,<br/>stricter wins, fails safe"]
+        subgraph tools ["Tools"]
+            direction TB
+            bank["Transactions<br/>mock bank here,<br/>Temi's real backend in production"]
+            reminders["Reminders<br/>src/reminders.ts"]
+            memory["Memory<br/>src/memory.ts<br/>refuses PINs and numbers"]
+        end
+    end
+
+    subgraph meta ["Meta Model API"]
+        muse["Muse Spark 1.3<br/>conversation, fraud check, eval judge"]
+    end
+
+    caller <--> telco
+    telco <-->|"calls in"| voice
+    telco <-.->|"production calls"| api
+    voice --> agent
+    api --> agent
+    agent <-->|"every turn"| muse
+    agent --> laughs
+    agent -->|"before any money moves"| guard
+    guard <--> muse
+    guard -->|"allow / PIN / block"| bank
+    agent --> reminders
+    agent --> memory
+    memory -.->|"what Temi remembers, every turn"| agent
+    reminders -.->|"when due: Temi calls the caller back"| telco
 ```
-Caller dials Temi's number (Twilio now, T2 Mobile at deployment)
-  → Temi call server (pre-existing: telephony, speech-to-text, voice)
-      → POST /v1/turn on this service  ─┐
-           Muse Spark agent loop        │  streamed back as
-           fraud check (money tools)    │  Server-Sent Events
-           tool executor ───────────────┤
-      ← text deltas, tool events, done ─┘
-  → Temi speaks the reply, sentence by sentence
-```
+
+**One turn, step by step:**
+1. The caller speaks. The phone line turns it into text in their language and sends it to the brain, with their country (taken from the number) and the call so far.
+2. The brain builds Muse Spark's instructions for this caller: their country's currency, languages, networks and scams, today's local date, and **everything Temi remembers about them**.
+3. Muse Spark replies, sentence by sentence. If it hasn't started within 0.8s, the caller hears a short "Sawa" or "Okay" instead of silence.
+4. If it decides to act, the tool runs:
+   - questions need none;
+   - reminders and memory are handled in the brain;
+   - **any money tool first goes through the fraud check.** A second Muse Spark call reads the whole conversation for scams and pressure, the country's rules check amounts and new recipients, and the stricter answer wins. If the check times out, the payment needs a PIN instead of going through.
+5. The reply is spoken. A `[chuckle]` or `[laugh]` plays as a real recorded laugh, unless the laugh gate removes it.
+6. When a reminder comes due, the brain phones the caller back through Twilio, and the same loop runs with the reminder in context.
 
 | Part | File |
 |---|---|
