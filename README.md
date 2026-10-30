@@ -167,18 +167,19 @@ npx tsx evals/guard-bench.ts --repeat 2
 
 ## After the hackathon: action plan for NuvoAI.
 
-1. **Bring this into the live product.** Connect Temi's production call server to this brain, so every live call runs on Muse Spark with the fraud check. Banking tools go to Temi's real backend instead of the mock bank.
-2. **Launch fully in Nigeria.** Move calls from Twilio to T2 Mobile's line and phone number, and go live on Bachs payments (which has been fully integrated).
-3. **Expand to Kenya, Ghana, Tanzania and Uganda.** For each country:
+1. **Bring this into the live product (Q4 2026).** Connect Temi's production call server to this brain, so every live call runs on Muse Spark with the fraud check. Banking tools go to Temi's real backend instead of the mock bank.
+2. **Launch fully in Nigeria (Q4 2026).** Move calls from Twilio to T2 Mobile's line and phone number, and go live on Bachs payments (which has been fully integrated).
+3. **Expand to Kenya, Ghana, Tanzania and Uganda (Q1 2027).** For each country:
    - a local phone number and teleco partner;
    - speech recognition and voices for Swahili, Sheng, Twi, Ghanaian Pidgin and Luganda;
    - the local licences and partners each market requires;
    - native speakers checking Temi's conversations before launch.
-4. **Then go further across Africa.** Next come Malawi, Rwanda, Zambia and the CFA franc countries, as soon as Bachs can pay out there.
-5. **Temi AI for Businesses.** Give businesses their own customer support AI agent on a dedicated phone number. It works offline: customers just make a normal call, with no internet, smartphone or app needed. Banks, telcos, shops, utilities, logistics companies and insurers get an agent that answers questions about their business, follows up with outbound calls, and takes action for the customer, in the languages their customers actually speak. It's built on the same brain, with the business's own knowledge and tools in place of Temi's banking ones.
-6. **Grow what Temi can do for callers.**
+4. **Then go further across Africa (Q1 2027).** Next come Malawi, Rwanda, Zambia and the CFA franc countries, as soon as Bachs can pay out there.
+5. **Temi AI for Businesses (Q2 2027).** Give businesses their own customer support AI agent on a dedicated phone number. It works offline: customers just make a normal call, with no internet, smartphone or app needed. Banks, telcos, shops, utilities, logistics companies and insurers get an agent that answers questions about their business, follows up with outbound calls, and takes action for the customer, in the languages their customers actually speak. It's built on the same brain, with the business's own knowledge and tools in place of Temi's banking ones.
+6. **Grow what Temi can do for callers (Q2 2027).**
    * **Agentic AI:** more tasks Temi carries out from start to finish on a call, like booking appointments, booking flights and more.
    * **Transactional AI:** better international payments, so callers can send and receive money across borders as easily as at home.
+7. **Take Temi AI beyond Africa (Q3 2027).** Bring Temi to other markets where many people still rely on basic phones and normal calls, starting with those where our payment and telco partners can follow.
 
 ## Phone line and payments
 
