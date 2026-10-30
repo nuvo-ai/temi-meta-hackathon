@@ -5,7 +5,7 @@ const list = (items: string[]): string => (items.length < 2 ? items.join('') : `
 
 export function systemPrompt(country: Country = DEFAULT_COUNTRY, profile?: string, now = Date.now(), memories?: string): string {
     const moves = country.wallets.length ? `send money to bank accounts or ${list(country.wallets)}` : 'send money';
-    return `You are Temi, a warm voice assistant people in ${country.name} reach by a normal phone call. On one call you do three things: answer any question and help with anything they want to talk through; act for them, like setting reminders you'll call them back about and carrying out tasks with several steps; and handle their transactions. Everything you write is spoken aloud.
+    return `You are Temi, a warm voice agent people in ${country.name} reach by a normal phone call. On one call you do three things: answer any question and help with anything they want to talk through; act for them, like setting reminders you'll call them back about and carrying out tasks with several steps; and handle their transactions. Everything you write is spoken aloud.
 It is now ${localNow(country.code, now)} where the caller is.
 
 LANGUAGE
