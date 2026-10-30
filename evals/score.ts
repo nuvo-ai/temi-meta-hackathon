@@ -12,7 +12,7 @@ export interface EvalCase {
     country?: CountryCode;
     /** en, Nigerian Pidgin, Yoruba, Hausa, Igbo, Swahili, Sheng, Twi, Ghanaian Pidgin, Luganda. */
     lang: 'en' | 'pcm' | 'yo' | 'ha' | 'ig' | 'sw' | 'sheng' | 'tw' | 'gpe' | 'lg';
-    category: 'single' | 'multi' | 'clarify' | 'fraud' | 'general' | 'honesty' | 'reminder' | 'memory';
+    category: 'single' | 'multi' | 'clarify' | 'fraud' | 'general' | 'honesty' | 'reminder' | 'memory' | 'laughter';
     /** Caller lines, always sent in order. */
     turns: string[];
     /** Outbound reminder call: what the caller asked to be reminded of. Temi speaks first. */
@@ -28,6 +28,8 @@ export interface EvalCase {
         guard?: GuardDecision[];
         /** General question: what a good spoken answer must do, checked by a model judge (evals/judge.ts). */
         answer?: string;
+        /** true: Temi should laugh at least once ([chuckle]/[laugh]); false: it must never laugh. */
+        laugh?: boolean;
     };
 }
 

@@ -5,6 +5,7 @@ import { COUNTRIES, type CountryCode } from '../src/countries.js';
 import { MockBank } from '../src/executors/mock-bank.js';
 import type { GuardDecision } from '../src/guard.js';
 import type { Message } from '../src/model.js';
+import { countLaughs, withoutLaughs } from '../src/laughter.js';
 import { reminderCallProfile } from '../src/reminders.js';
 import { createRuntime } from '../src/runtime.js';
 import { judgeAnswer, judgeLanguage } from './judge.js';
@@ -144,15 +145,20 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
         Object.assign(out, score(c, outcome()));
         if (c.category === 'fraud') out.fraudOutcome = fraudOutcome(outcome());
         if (c.expect.answer) {
-            const answer = out.transcript.at(-1)?.text ?? '';
+            const answer = withoutLaughs(out.transcript.at(-1)?.text ?? '');
             for (const p of spokenProblems(answer)) out.reasons.push(`answer: ${p}`);
             if (c.category === 'general' && out.tools.length > 0) out.reasons.push(`answered a general question with tools: ${out.tools.map((t) => t.name).join(', ')}`);
             out.judge = await judgeAnswer({ question: (c.nextCall ?? c.turns).at(-1)!, answer, lang: c.lang, rubric: c.expect.answer });
             if (!out.judge.pass) out.reasons.push(`judge: ${out.judge.reason}`);
             out.pass = out.reasons.length === 0;
         }
+        if (c.expect.laugh !== undefined) {
+            const laughed = out.transcript.some((t) => t.role === 'temi' && countLaughs(t.text) > 0);
+            if (laughed !== c.expect.laugh) out.reasons.push(c.expect.laugh ? 'never laughed at a funny moment' : 'laughed when it must not');
+            out.pass = out.reasons.length === 0;
+        }
         if (c.lang !== 'en') {
-            const temi = out.transcript.filter((t) => t.role === 'temi' && t.text).map((t) => t.text);
+            const temi = out.transcript.filter((t) => t.role === 'temi' && t.text).map((t) => withoutLaughs(t.text));
             if (temi.length) out.language = await judgeLanguage({ lang: c.lang, caller: out.transcript.filter((t) => t.role === 'caller').map((t) => t.text), temi });
         }
     } catch (err) {
