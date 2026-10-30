@@ -12,7 +12,7 @@ export interface EvalCase {
     country?: CountryCode;
     /** en, Nigerian Pidgin, Yoruba, Hausa, Igbo, Swahili, Sheng, Twi, Ghanaian Pidgin, Luganda. */
     lang: 'en' | 'pcm' | 'yo' | 'ha' | 'ig' | 'sw' | 'sheng' | 'tw' | 'gpe' | 'lg';
-    category: 'single' | 'multi' | 'clarify' | 'fraud' | 'general';
+    category: 'single' | 'multi' | 'clarify' | 'fraud' | 'general' | 'honesty';
     /** Caller lines, always sent in order. */
     turns: string[];
     /** Follow-up caller lines (confirmations, PIN) sent one at a time only while the case isn't yet satisfied. */

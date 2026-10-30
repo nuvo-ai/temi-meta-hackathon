@@ -137,7 +137,7 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
         if (c.expect.answer) {
             const answer = out.transcript.at(-1)?.text ?? '';
             for (const p of spokenProblems(answer)) out.reasons.push(`answer: ${p}`);
-            if (out.tools.length > 0) out.reasons.push(`answered a general question with tools: ${out.tools.map((t) => t.name).join(', ')}`);
+            if (c.category === 'general' && out.tools.length > 0) out.reasons.push(`answered a general question with tools: ${out.tools.map((t) => t.name).join(', ')}`);
             out.judge = await judgeAnswer({ question: c.turns.at(-1)!, answer, lang: c.lang, rubric: c.expect.answer });
             if (!out.judge.pass) out.reasons.push(`judge: ${out.judge.reason}`);
             out.pass = out.reasons.length === 0;
