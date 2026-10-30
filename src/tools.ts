@@ -56,6 +56,17 @@ export function toolsFor(country: Country): Tool[] {
         fn('recent_transactions', "List the caller's most recent transactions.", {
             limit: { type: 'number', description: 'How many, default 3.' },
         }),
+        fn(
+            'set_reminder',
+            'Remind the caller of something at a set time: Temi phones them then, says what it is, and they can act on it in that call.',
+            {
+                what: { type: 'string', description: "What to remind them of, in the caller's own language, with any amount and who it's for." },
+                when: { type: 'string', description: 'The caller\'s local time, "YYYY-MM-DD HH:mm".' },
+            },
+            ['what', 'when'],
+        ),
+        fn('list_reminders', "List the caller's upcoming reminders.", {}),
+        fn('cancel_reminder', 'Cancel one of the caller\'s reminders.', { id: { type: 'string', description: 'From list_reminders or set_reminder.' } }, ['id']),
     ];
 }
 

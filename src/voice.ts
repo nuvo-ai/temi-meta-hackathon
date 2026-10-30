@@ -4,6 +4,7 @@ import { runTurn } from './agent.js';
 import { config } from './config.js';
 import { COUNTRIES, DEFAULT_COUNTRY, countryFromNumber, isCountryCode, type Country, type CountryCode } from './countries.js';
 import type { Message } from './model.js';
+import { reminderCallProfile } from './reminders.js';
 import type { Runtime } from './runtime.js';
 
 /**
@@ -26,6 +27,10 @@ const SPEECH_LANGUAGE: Record<CountryCode, string> = {
 interface Call {
     country: Country;
     history: Message[];
+    /** The caller's number: Twilio's From on calls in, To on reminder calls out. */
+    callerNumber?: string;
+    /** Extra context for the brain, e.g. what a reminder call is about. */
+    profile?: string;
     lastSeen: number;
     /** TwiML for a reply still being worked out, fetched by /voice/reply. */
     pending?: Promise<string>;
@@ -89,7 +94,7 @@ function countryFor(from: string | undefined): Country {
 async function answer(runtime: Runtime, req: FastifyRequest, callSid: string, call: Call): Promise<string> {
     let spoken = '';
     try {
-        for await (const event of runTurn({ ...runtime, callerId: callSid, history: call.history, country: call.country })) {
+        for await (const event of runTurn({ ...runtime, callerId: callSid, callerNumber: call.callerNumber, history: call.history, country: call.country, profile: call.profile })) {
             if (event.type === 'text') spoken += event.delta;
             if (event.type === 'guard') req.log.info({ callSid, tool: event.tool, guard: event.result }, 'fraud check');
             if (event.type === 'done') {
@@ -117,9 +122,29 @@ export function registerVoice(app: FastifyInstance, runtime: Runtime): void {
         for (const [sid, call] of calls) if (now - call.lastSeen > CALL_TTL_MS) calls.delete(sid);
 
         const country = countryFor(req.body?.From);
-        calls.set(req.body?.CallSid ?? '', { country, history: [], lastSeen: now });
+        calls.set(req.body?.CallSid ?? '', { country, history: [], callerNumber: req.body?.From, lastSeen: now });
         req.log.info({ callSid: req.body?.CallSid, country: country.code }, 'call started');
         return reply.type('text/xml').send(listen("Hello, it's Temi. How can I help you today?", country));
+    });
+
+    // A reminder call Temi placed (src/reminders.ts): Temi speaks first, says
+    // what the reminder is, and offers to act on it there and then.
+    app.post<{ Body: Record<string, string>; Querystring: { id?: string } }>('/voice/reminder', async (req, reply) => {
+        if (!fromTwilio(req)) return reply.code(403).send();
+        const reminder = runtime.reminders.get(req.query.id ?? '');
+        reply.type('text/xml');
+        if (!reminder) return reply.send(listen("Hello, it's Temi. How can I help you today?", countryFor(req.body?.To)));
+        const callSid = req.body?.CallSid ?? '';
+        const call: Call = {
+            country: COUNTRIES[reminder.country],
+            history: [{ role: 'user', content: '(The caller has just picked up.)' }],
+            callerNumber: reminder.callerNumber,
+            profile: reminderCallProfile(reminder.what, reminder.when),
+            lastSeen: Date.now(),
+        };
+        calls.set(callSid, call);
+        req.log.info({ callSid, reminder: reminder.id }, 'reminder call answered');
+        return reply.send(await answer(runtime, req, callSid, call));
     });
 
     app.post<{ Body: Record<string, string> }>('/voice/turn', async (req, reply) => {
@@ -129,7 +154,7 @@ export function registerVoice(app: FastifyInstance, runtime: Runtime): void {
         let call = calls.get(callSid);
         if (!call) {
             // Server restarted mid-call: carry on with a fresh history.
-            call = { country: countryFor(req.body?.From), history: [], lastSeen: Date.now() };
+            call = { country: countryFor(req.body?.From), history: [], callerNumber: req.body?.From, lastSeen: Date.now() };
             calls.set(callSid, call);
         }
         call.lastSeen = Date.now();

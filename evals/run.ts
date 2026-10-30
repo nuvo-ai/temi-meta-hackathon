@@ -5,6 +5,7 @@ import { COUNTRIES, type CountryCode } from '../src/countries.js';
 import { MockBank } from '../src/executors/mock-bank.js';
 import type { GuardDecision } from '../src/guard.js';
 import type { Message } from '../src/model.js';
+import { reminderCallProfile } from '../src/reminders.js';
 import { createRuntime } from '../src/runtime.js';
 import { judgeAnswer, judgeLanguage } from './judge.js';
 import { fraudOutcome, percentile, score, spokenProblems, type EvalCase, type ExecutedTool, type Outcome } from './score.js';
@@ -69,6 +70,8 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
         transcript: [], tools: [], guard,
     };
 
+    // Same context the phone line gives the brain on a reminder call (src/voice.ts).
+    const profile = c.reminderCall ? reminderCallProfile(c.reminderCall) : undefined;
     const say = async (line: string) => {
         history.push({ role: 'user', content: line });
         out.transcript.push({ role: 'caller', text: line });
@@ -78,7 +81,7 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
         let firstSound: number | null = null;
         const toolsBefore = out.tools.length;
         const pending = new Map<string, { name: string; args: Record<string, unknown> }>();
-        for await (const ev of runTurn({ ...runtime, callerId: `eval-${c.id}`, history, country })) {
+        for await (const ev of runTurn({ ...runtime, callerId: `eval-${c.id}`, callerNumber: `${country.dialCode}700000000`, history, country, profile })) {
             if (ev.type === 'text' || (ev.type === 'tool_call' && ev.slow)) firstSound ??= Date.now() - turnStarted;
             if (ev.type === 'text') spoken += ev.delta;
             else if (ev.type === 'tool_call') {

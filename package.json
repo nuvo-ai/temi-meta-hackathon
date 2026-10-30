@@ -1,7 +1,7 @@
 {
   "name": "temi-meta-hackathon",
   "version": "0.1.0",
-  "description": "Temi's brain on Meta's Muse Spark: agent loop, fraud check and evals for a phone-call voice agent.",
+  "description": "Temi's brain on Meta's Muse Spark: one phone call to talk about anything, set reminders Temi calls you back about, and make transactions.",
   "type": "module",
   "private": true,
   "scripts": {

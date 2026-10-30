@@ -24,6 +24,8 @@ export interface TurnOptions {
     executor: ToolExecutor;
     guard: FraudGuard;
     callerId: string;
+    /** Caller's number in international format, when known. */
+    callerNumber?: string;
     /** Conversation so far, without a system message: user, assistant and tool messages. */
     history: Message[];
     /** Caller's country: currency, networks, languages and scam patterns. Defaults to Nigeria. */
@@ -187,7 +189,7 @@ async function* runTool(call: ToolCall, opts: TurnOptions, transcript: Message[]
 
     let result: unknown;
     try {
-        result = await opts.executor.execute(name, args, { callerId: opts.callerId, country: country.code });
+        result = await opts.executor.execute(name, args, { callerId: opts.callerId, callerNumber: opts.callerNumber, country: country.code });
     } catch (err) {
         result = { error: err instanceof Error ? err.message : 'tool failed' };
     }

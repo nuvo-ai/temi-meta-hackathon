@@ -58,6 +58,9 @@ export const config = {
         /** Public https URL Twilio calls, e.g. the ngrok URL. Needed only to check Twilio's signature. */
         publicUrl: env('PUBLIC_URL'),
         twilioAuthToken: env('TWILIO_AUTH_TOKEN'),
+        /** For outbound reminder calls (src/reminders.ts). */
+        twilioAccountSid: env('TWILIO_ACCOUNT_SID'),
+        twilioFromNumber: env('TWILIO_FROM_NUMBER'),
         /** Optional Twilio <Say> voice, e.g. Polly.Ayanda-Neural. Empty uses Twilio's default. */
         twilioVoice: env('TWILIO_VOICE'),
         /** Force a country for every call (NG, KE, GH, TZ or UG), e.g. to demo Kenya from a Nigerian phone. */

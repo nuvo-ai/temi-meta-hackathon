@@ -4,6 +4,8 @@ export interface ToolContext {
     callerId: string;
     /** Caller's country; decides currency, networks and how money moves. Defaults to NG. */
     country?: CountryCode;
+    /** Caller's number in international format, when known; reminders call it back. */
+    callerNumber?: string;
 }
 
 /**

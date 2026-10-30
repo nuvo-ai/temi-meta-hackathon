@@ -14,7 +14,7 @@ Temi is live in production in Nigeria.
 
 **For this hackathon, we've spread Temi AI from Nigeria to every African country where our payment partner Bachs can pay out: Nigeria, Kenya, Ghana, Tanzania and Uganda. That's 5 countries, 5 currencies, and 5 more African languages (Swahili, Sheng, Twi, Ghanaian Pidgin and Luganda), for 10 languages in all.**
 
-> **About this repo's demo.** The financial transactions here are **mock transactions**: balances, transfers, airtime and data run against an in-memory mock bank, and no real money moves. The generative features and multi-step agentic requests work 100% here; outbound reminder calls run in production Temi. In Temi's original production codebase, every feature, including real transactions, works live.
+> **About this repo's demo.** The financial transactions here are **mock transactions**: balances, transfers, airtime and data run against an in-memory mock bank, and no real money moves. The generative and agentic features work 100% here, including reminders and the outbound calls that deliver them (with Twilio credentials set). In Temi's original production codebase, every feature, including real transactions, works live.
 
 ## Track and problem statement
 
@@ -47,7 +47,8 @@ These live in Temi's production codebase, not in this repo.
 This repo contains only work done during the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026).
 
 - **From Nigeria to five countries.** Temi now serves callers in Nigeria, Kenya, Ghana, Tanzania and Uganda, picked from the caller's number. These are the African countries where Bachs, our payment partner, supports payouts. Each country has its own currency (naira, Kenyan, Tanzanian and Ugandan shillings, cedis), networks, fraud limits and scam patterns, and Temi uses mobile money wherever Bachs can pay out to it: M-Pesa, Airtel Money, MTN MoMo, Telecel Cash, AT Money, Mixx by Yas and HaloPesa. On top of English, Nigerian Pidgin, Yoruba, Hausa and Igbo, Temi now speaks Swahili, Sheng, Twi, Ghanaian Pidgin and Luganda. All of it lives in one file per country ([src/countries.ts](src/countries.ts)), so the next country is one entry plus its test cases.
-- **A new brain on Muse Spark.** Temi's reasoning and tool-calling now run on Meta's Muse Spark through the Meta Model API, built as a standalone service that Temi's live phone line calls on every turn.
+- **A new brain on Muse Spark, for all three services.** Temi's reasoning and tool-calling now run on Meta's Muse Spark through the Meta Model API, built as a standalone service that Temi's live phone line calls on every turn. One brain does everything on a call. It answers any question (generative). It acts on the caller's behalf: setting reminders, calling them back when they're due, and running tasks with several steps (agentic). And it handles transactions (transactional).
+- **Reminder calls, rebuilt on Meta.** A caller says "remind me on Monday at nine to pay my loan" in any of the ten languages. Muse Spark turns that into the caller's local date and time, and when it's due, Temi phones them ([src/reminders.ts](src/reminders.ts)), says what the reminder is in their language, and offers to do it there and then: "I'm calling to remind you to send Mum five thousand naira. Do you want to do it now?"
 - **Better at taking action.** With Meta's reasoning models, Temi handles multi-step requests more reliably, like "check my balance, then send ₦5,000 to Mum and buy her airtime." It picks the right action, asks for what's missing, and confirms before moving money. Multi-step task success in Nigeria: **80% → 100%**; in Igbo, **50% → 100%**. In Kenya, Ghana, Tanzania and Uganda, every multi-step request passed, in Swahili, Sheng, Twi, Ghanaian Pidgin, Luganda and English.
 - **Faster when Temi takes action.** When a request needs a bank action, Temi now starts speaking in **2.7s instead of 3.4s** (typical), and in **4.0s instead of 9.5s** on the slowest calls. The phone line's "one moment" plays within about a second, so the caller is never left in silence.
 - **A fraud check on every transfer.** Before any money moves, a Meta model reviews the conversation for signs of scams, coercion or unusual requests, including each country's own scams: fake bank or EFCC officials in Nigeria, "I sent you M-Pesa by mistake, send it back" in Kenya, fake MoMo promos in Ghana, "ile pesa tuma kwa namba hii" ("send that money to this number instead") in Tanzania, and fake tax officials or jobs abroad in Uganda. It then allows the transfer, asks for extra verification, or blocks it. It blocked **all 32 scam conversations** in our benchmark across the five countries and wrongly blocked **none of 24 real payments**, in about **1.2s**.
@@ -58,7 +59,7 @@ This repo contains only work done during the Meta Global AI Developer Hackathon 
 
 On Oct 27, before switching, we ran the same scripted phone conversations through Temi's previous brain (gpt-4o-mini) and through Muse Spark 1.3, with the same prompt, tools and fraud check. A simulated caller confirms, gives a PIN when asked, or insists when Temi hesitates, and every run starts from a fresh mock bank. Temi now runs only on Meta, and the old model's code is gone from this repo. Its recorded runs are kept in [evals/before/](evals/before/) as the "before".
 
-The old model was only ever tested on Nigeria (16 cases). Muse Spark now runs 67 cases across Nigeria, Kenya, Ghana, Tanzania and Uganda, including 15 everyday questions that have nothing to do with money.
+The old model was only ever tested on Nigeria (16 cases). Muse Spark now runs 75 cases across Nigeria, Kenya, Ghana, Tanzania and Uganda, including 15 everyday questions that have nothing to do with money.
 
 | | Before: gpt-4o-mini | After: Muse Spark |
 |---|---|---|
@@ -70,7 +71,8 @@ The old model was only ever tested on Nigeria (16 cases). Muse Spark now runs 67
 | Tanzania (Swahili, English) | not served | **8/8 (100%)** |
 | Uganda (Luganda, English) | not served | **8/8 (100%)** |
 | Everyday questions, 5 countries, 10 languages | not measured | **15/15 (100%)**, graded by a Muse Spark judge |
-| Stayed in the caller's language for the whole call | not measured | **41/44** non-English cases (Muse Spark judge) |
+| Stayed in the caller's language for the whole call | not measured | **45/48** non-English cases (Muse Spark judge) |
+| Reminders: set at the right local time, cancelled, and acted on in the reminder call | not in this brain | **8/8 (100%)** |
 | Sycophancy: agreed with something false or praised a bad idea under pressure | not measured | **0 of 10** pressure tests |
 | First word when Temi takes an action (typical / slowest 5%) | 3.4s / 9.5s | **2.7s / 4.0s** |
 | First word in plain conversation (typical / slowest 5%) | 0.7s / 1.1s | 1.5s / 2.7s |
@@ -115,7 +117,12 @@ A Muse Spark judge grades every answer, and fails any that agrees with something
 
 Temi now answers more directly. Before, it opened with "I understand you are upset, and I am here for you." Now it says *"I can't agree with that because it is not true. Inflation is prices going up."* It still passes 10 of 10, with no sycophantic answers. When a caller in Ghana insists their friend's double-your-money offer is real, Temi says: *"I will not tell you that. Close friend or not, doubling five hundred cedis in a week is not real."*
 
-**6. We tuned Muse Spark with the evals, not by feel.** The first five-country runs exposed three problems. We fixed each one and measured the result:
+**6. Temi calls you back.** Temi isn't only reached by phone; it reaches out. Callers set reminders for rent, a loan repayment, school fees, a bill or a call to make, and Temi phones them when it's due. Eight eval cases check both halves:
+- **Setting reminders,** in English, Pidgin, Swahili and Luganda. Each must become the caller's correct local date and time. On Friday afternoon, "Friday at 9am" became the following Friday. "Jumatatu saa tatu asubuhi" became Monday 09:00, because Swahili counts the hours from 6am. "Tomorrow" with no time became 9:00, and a reminder with no day made Temi ask when.
+- **Cancelling** a reminder.
+- **The call itself.** Temi speaks first, in the reminder's language: *"Hujambo, mimi ni Temi. Uliomba ukumbushwe, mtumie Mum shilingi elfu moja. Nikusaidie kufanya hivyo sasa?"* ("You asked to be reminded to send Mum a thousand shillings. Shall I help you do it now?") If the caller says yes, it does it, with the same read-back, fraud check and PIN as any other payment.
+
+**7. We tuned Muse Spark with the evals, not by feel.** The first five-country runs exposed three problems. We fixed each one and measured the result:
 
 | | Before tuning (`low` reasoning) | After tuning (`minimal` reasoning) |
 |---|---|---|
@@ -131,8 +138,8 @@ Temi now answers more directly. Before, it opened with "I understand you are ups
 **What's not better yet, and what we did about each.**
 - **Plain conversation starts slower: about 1.3s, against 0.7s before.** Muse Spark always reasons before it answers. We timed every chat model on Meta's API, and `muse-spark-1.3` at `minimal` reasoning is already the fastest; older versions take 1.9–2.8s. So instead of letting the caller sit in silence, the phone line ([src/voice.ts](src/voice.ts)) says a short acknowledgement in the caller's language ("Sawa", "Kale", "Okay") if the reply isn't ready within 0.8s, then speaks the answer as soon as it is.
 - **It uses more tokens: about 2× the input and 6× the output per turn** (3,026 in and 282 out, against 1,508 and 47). Most of the extra output is Muse Spark's reasoning, which `minimal` already keeps as low as the API allows. We trimmed the instructions where no eval depends on the wording. Cost per call minute depends on Meta's pricing, which isn't published for this model yet.
-- **Language slips are now measured, not anecdotal.** Every non-English case is checked by a Muse Spark judge for whether Temi stayed in the caller's language for the whole call. The first full run found real slips in Swahili and Luganda, both in the update between two actions ("now I'll buy that airtime"). One new instruction fixed both. Slips still happen: in the latest full run, 3 of 44 non-English calls had one English sentence, mostly a short status line like "Done, fifty cedis sent to Kwame." Because it's measured, we can see it and keep pushing it down. The fraud check's explanations used to restate amounts, once getting a Twi amount wrong. The amount is now written out for it, and its explanations copy that exactly.
-- **The test set is still small: 67 cases, and a native speaker still has to check them.** We added cases for the languages with the fewest (Ghanaian Pidgin, Luganda, Twi, Sheng, Hausa and Yoruba). A model judge can't replace a native speaker, so `npx tsx evals/review.ts` turns any run into one review sheet per language ([evals/review/](evals/review/)). A Kenyan, Ghanaian, Tanzanian, Ugandan, Yoruba, Hausa or Igbo speaker marks each line natural or not and writes how they'd say it. Their fixes become new eval cases.
+- **Language slips are now measured, not anecdotal.** Every non-English case is checked by a Muse Spark judge for whether Temi stayed in the caller's language for the whole call. The first full run found real slips in Swahili and Luganda, both in the update between two actions ("now I'll buy that airtime"). One new instruction fixed both. Slips still happen: in the latest full run, 3 of 48 non-English calls had one English sentence, all short status lines between two actions like "That's sent, now the data." Because it's measured, we can see it and keep pushing it down. The fraud check's explanations used to restate amounts, once getting a Twi amount wrong. The amount is now written out for it, and its explanations copy that exactly.
+- **The test set is still small: 75 cases, and a native speaker still has to check them.** We added cases for the languages with the fewest (Ghanaian Pidgin, Luganda, Twi, Sheng, Hausa and Yoruba). A model judge can't replace a native speaker, so `npx tsx evals/review.ts` turns any run into one review sheet per language ([evals/review/](evals/review/)). A Kenyan, Ghanaian, Tanzanian, Ugandan, Yoruba, Hausa or Igbo speaker marks each line natural or not and writes how they'd say it. Their fixes become new eval cases.
 
 Reproduce:
 
@@ -186,6 +193,8 @@ Caller dials Temi's number (Twilio now, T2 Mobile at deployment)
 | Country profiles: currency, networks, mobile money, languages, fraud limits, scams | [src/countries.ts](src/countries.ts) |
 | Meta Model API client (plain `fetch`, streaming) | [src/model.ts](src/model.ts) |
 | Tool definitions | [src/tools.ts](src/tools.ts) |
+| Reminders and the outbound calls that deliver them | [src/reminders.ts](src/reminders.ts) |
+| Phone line: Twilio calls in and reminder calls out, straight into the brain | [src/voice.ts](src/voice.ts) |
 | Mock bank for local runs and evals (no real money) | [src/executors/mock-bank.ts](src/executors/mock-bank.ts) |
 | Forwarder to Temi's real banking backend | [src/executors/http.ts](src/executors/http.ts) |
 | HTTP/SSE server | [src/server.ts](src/server.ts) |
@@ -241,10 +250,11 @@ Closing the connection (hang-up or barge-in) cancels generation.
 ## Evals
 
 ```bash
-npm run eval                   # all 67 cases on Muse Spark
+npm run eval                   # all 75 cases on Muse Spark
 npm run eval -- --country KE   # one country
 npm run eval -- --category general   # everyday questions only
 npm run eval -- --category honesty   # sycophancy tests
+npm run eval -- --category reminder  # reminders and reminder calls
 npx tsx evals/review.ts        # native-speaker review sheets from the latest run
 ```
 

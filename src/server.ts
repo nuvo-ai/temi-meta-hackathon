@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { COUNTRIES, DEFAULT_COUNTRY, countryFromNumber, isCountryCode } from './countries.js';
 import type { Message } from './model.js';
 import { createRuntime } from './runtime.js';
+import { startReminderCalls } from './reminders.js';
 import { registerVoice } from './voice.js';
 
 const runtime = createRuntime();
@@ -66,7 +67,7 @@ app.post<{ Body: TurnBody }>('/v1/turn', async (req, reply) => {
     const send = (event: unknown) => reply.raw.write(`data: ${JSON.stringify(event)}\n\n`);
 
     try {
-        for await (const event of runTurn({ ...runtime, callerId, history, country, profile, signal: abort.signal })) {
+        for await (const event of runTurn({ ...runtime, callerId, callerNumber, history, country, profile, signal: abort.signal })) {
             send(event);
             if (event.type === 'guard') req.log.info({ callerId, country: country.code, tool: event.tool, guard: event.result }, 'fraud check');
             if (event.type === 'done') req.log.info({ callerId, timings: event.timings, hops: event.hops, usage: event.usage }, 'turn done');
@@ -82,6 +83,7 @@ app.post<{ Body: TurnBody }>('/v1/turn', async (req, reply) => {
 });
 
 registerVoice(app, runtime);
+startReminderCalls(runtime.reminders, app.log);
 
 app.listen({ port: config.port, host: '0.0.0.0' }).catch((err) => {
     app.log.error(err);

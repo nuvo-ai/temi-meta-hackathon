@@ -18,6 +18,8 @@ export interface Country {
     name: string;
     demonym: string;
     dialCode: string;
+    /** IANA time zone, for reminders. */
+    timeZone: string;
     currency: { code: string; name: string; locale: string };
     /** How amounts are said out loud, for the prompt. */
     sayAmounts: string;
@@ -43,6 +45,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         name: 'Nigeria',
         demonym: 'Nigerian',
         dialCode: '+234',
+        timeZone: 'Africa/Lagos',
         currency: { code: 'NGN', name: 'naira', locale: 'en-NG' },
         sayAmounts: '"five thousand naira" ("₦5,000" and "5k" are fine too)',
         languages: ['English', 'Nigerian Pidgin', 'Yoruba', 'Hausa', 'Igbo'],
@@ -68,6 +71,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         name: 'Kenya',
         demonym: 'Kenyan',
         dialCode: '+254',
+        timeZone: 'Africa/Nairobi',
         currency: { code: 'KES', name: 'shillings', locale: 'en-KE' },
         sayAmounts: '"two thousand shillings" (Kenyans also say "two thousand bob"; in Swahili, "shilingi elfu mbili")',
         languages: ['English', 'Swahili', 'Sheng'],
@@ -94,6 +98,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         name: 'Ghana',
         demonym: 'Ghanaian',
         dialCode: '+233',
+        timeZone: 'Africa/Accra',
         currency: { code: 'GHS', name: 'cedis', locale: 'en-GH' },
         sayAmounts: '"fifty cedis" (Twi: "sidi aduonum")',
         languages: ['English', 'Twi', 'Ghanaian Pidgin'],
@@ -120,6 +125,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         name: 'Tanzania',
         demonym: 'Tanzanian',
         dialCode: '+255',
+        timeZone: 'Africa/Dar_es_Salaam',
         currency: { code: 'TZS', name: 'shillings', locale: 'en-TZ' },
         sayAmounts: '"twenty thousand shillings" (in Swahili, "shilingi elfu ishirini")',
         languages: ['Swahili', 'English'],
@@ -147,6 +153,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         name: 'Uganda',
         demonym: 'Ugandan',
         dialCode: '+256',
+        timeZone: 'Africa/Kampala',
         currency: { code: 'UGX', name: 'shillings', locale: 'en-UG' },
         sayAmounts: '"twenty thousand shillings" (in Luganda, "emitwalo ebiri")',
         languages: ['English', 'Luganda', 'Swahili'],
