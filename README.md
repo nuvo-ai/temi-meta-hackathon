@@ -176,6 +176,9 @@ npx tsx evals/guard-bench.ts --repeat 2
    - native speakers checking Temi's conversations before launch.
 4. **Then go further across Africa.** Next come Malawi, Rwanda, Zambia and the CFA franc countries, as soon as Bachs can pay out there.
 5. **Temi AI for Businesses.** Give businesses their own customer support AI agent on a dedicated phone number. It works offline: customers just make a normal call, with no internet, smartphone or app needed. Banks, telcos, shops, utilities, logistics companies and insurers get an agent that answers questions about their business, follows up with outbound calls, and takes action for the customer, in the languages their customers actually speak. It's built on the same brain, with the business's own knowledge and tools in place of Temi's banking ones.
+6. **Grow what Temi can do for callers.**
+   * **Agentic AI:** more tasks Temi carries out from start to finish on a call, like booking appointments, booking flights and more.
+   * **Transactional AI:** better international payments, so callers can send and receive money across borders as easily as at home.
 
 ## Phone line and payments
 
