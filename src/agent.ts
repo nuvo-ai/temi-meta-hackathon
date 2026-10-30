@@ -1,6 +1,7 @@
 import { DEFAULT_COUNTRY, type Country } from './countries.js';
 import type { ToolExecutor } from './executors/types.js';
 import type { FraudGuard, GuardResult } from './guard.js';
+import { LaughGate } from './laughter.js';
 import { ownerOf, type Memory } from './memory.js';
 import type { Message, ModelClient, ToolCall, Usage } from './model.js';
 import { systemPrompt } from './prompt.js';
@@ -106,6 +107,7 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
 
     let spoken = '';
     let toolsRan = false;
+    const laughs = new LaughGate(opts.history);
 
     for (let hop = 1; hop <= maxHops; hop++) {
         const gen = model.stream([{ role: 'system', content: systemPrompt(country, opts.profile, Date.now(), opts.memory?.forPrompt(ownerOf(opts))) }, ...convo()], tools, signal);
@@ -115,6 +117,8 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
         // if the model turns out to be calling a tool instead.
         let held = '';
         const say = function* (text: string): Generator<AgentEvent, void, void> {
+            text = laughs.filter(text);
+            if (!text.trim()) return;
             if (firstTokenMs === null) firstTokenMs = Date.now() - started;
             // Text from an earlier hop ("One moment.") must not run into this one ("One moment.Done").
             if (!hopSpoken && spoken && !/\s$/.test(spoken) && !/^\s/.test(text)) text = ` ${text}`;
@@ -154,6 +158,7 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
         produced.push({ role: 'assistant', content: hopSpoken.trim() || null, tool_calls: assembled.toolCalls });
         for (const call of assembled.toolCalls) {
             const result = yield* runTool(call, opts, convo());
+            laughs.noteToolResult(result);
             produced.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(result) });
         }
     }

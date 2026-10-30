@@ -1,8 +1,10 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { readFileSync, readdirSync } from 'node:fs';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { runTurn } from './agent.js';
 import { config } from './config.js';
 import { COUNTRIES, DEFAULT_COUNTRY, countryFromNumber, isCountryCode, type Country, type CountryCode } from './countries.js';
+import { splitLaughs, type LaughKind } from './laughter.js';
 import type { Message } from './model.js';
 import { reminderCallProfile } from './reminders.js';
 import type { Runtime } from './runtime.js';
@@ -57,9 +59,26 @@ const CALL_TTL_MS = 60 * 60 * 1000;
 const xml = (s: string): string =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
+/** Recorded laughs in assets/laughs, named chuckle-N.mp3 and laugh-N.mp3, played where Temi writes [chuckle] or [laugh]. */
+const LAUGH_DIR = new URL('../assets/laughs/', import.meta.url);
+const LAUGHS: Record<LaughKind, string[]> = { chuckle: [], laugh: [] };
+for (const file of readdirSync(LAUGH_DIR).sort()) {
+    const kind = file.split('-')[0] as LaughKind;
+    if (file.endsWith('.mp3') && kind in LAUGHS) LAUGHS[kind].push(file);
+}
+let laughTurn = 0;
+
+/** Speaks text, playing a recorded laugh wherever it has a [chuckle] or [laugh] marker. */
 function say(text: string): string {
     const voice = config.voice.twilioVoice ? ` voice="${xml(config.voice.twilioVoice)}"` : '';
-    return `<Say${voice}>${xml(text)}</Say>`;
+    return splitLaughs(text)
+        .map((part) => {
+            if ('say' in part) return `<Say${voice}>${xml(part.say)}</Say>`;
+            const clips = LAUGHS[part.laugh];
+            // Rotate through the clips so the same laugh doesn't play twice running.
+            return clips.length ? `<Play>/voice/laughs/${clips[laughTurn++ % clips.length]}</Play>` : '';
+        })
+        .join('');
 }
 
 /** Speak `text` (the caller can talk over it), then listen for the caller's next turn. */
@@ -112,6 +131,12 @@ async function answer(runtime: Runtime, req: FastifyRequest, callSid: string, ca
 
 export function registerVoice(app: FastifyInstance, runtime: Runtime): void {
     // Twilio posts form-encoded bodies; Fastify only parses JSON out of the box.
+    app.get<{ Params: { file: string } }>('/voice/laughs/:file', async (req, reply) => {
+        const { file } = req.params;
+        if (![...LAUGHS.chuckle, ...LAUGHS.laugh].includes(file)) return reply.code(404).send();
+        return reply.type('audio/mpeg').header('Cache-Control', 'public, max-age=86400').send(readFileSync(new URL(file, LAUGH_DIR)));
+    });
+
     app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body, done) => {
         done(null, Object.fromEntries(new URLSearchParams(body as string)));
     });
