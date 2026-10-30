@@ -102,10 +102,16 @@ async function checkModelAccess(): Promise<void> {
     const { baseURL, apiKey, model } = providerConfig();
     try {
         const res = await fetch(`${baseURL}/models`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(10_000) });
-        if (!res.ok) return app.log.error({ status: res.status, model: JSON.stringify(model) }, 'Meta Model API rejected the key: check MODEL_API_KEY');
-        const ids = ((await res.json()) as { data?: Array<{ id: string }> }).data?.map((m) => m.id) ?? [];
-        if (ids.includes(model)) app.log.info({ model }, 'Meta model available');
-        else app.log.error({ model: JSON.stringify(model), available: ids }, 'this key cannot use the configured model: check META_MODEL and MODEL_API_KEY');
+        if (!res.ok) return app.log.error({ status: res.status, baseURL, model: JSON.stringify(model) }, 'Meta Model API rejected the key: check MODEL_API_KEY');
+        const body = await res.text();
+        let ids: string[] = [];
+        try {
+            ids = ((JSON.parse(body) as { data?: Array<{ id: string }> }).data ?? []).map((m) => m.id);
+        } catch {
+            // Not JSON: logged below.
+        }
+        if (ids.includes(model)) app.log.info({ model, baseURL }, 'Meta model available');
+        else app.log.error({ model: JSON.stringify(model), baseURL, available: ids, response: body.slice(0, 300) }, 'this key cannot use the configured model: check META_MODEL, META_BASE_URL and MODEL_API_KEY');
     } catch (err) {
         app.log.error({ err: err instanceof Error ? err.message : String(err) }, 'could not reach the Meta Model API');
     }
