@@ -1,0 +1,8 @@
+"case","country","caller said","Temi said","natural? (yes/no)","meaning correct? (yes/no)","how a native speaker would say it"
+"yo-balance","NG","Ẹ jọ̀ọ́, èló ló kù nínú àkáǹtì mi?","Àkáǹtì rẹ kù ní eighty-five thousand naira.","","",""
+"yo-multi-send-airtime","NG","Fi ẹgbẹ̀rún márùn-ún náírà ránṣẹ́ sí Mum, kí o sì ra káàdì ìpè ẹgbẹ̀rún kan fún mi.","Ṣé kí n fi ẹgbẹ̀rún márùn ún naira ránṣẹ́ sí Mum?","","",""
+"yo-multi-send-airtime","NG","Bẹ́ẹ̀ni.","Mo ti fi ẹgbẹ̀rún márùn-ún naira ránṣẹ́ sí Mum. Ṣé kí n ra káàdì ẹgbẹ̀rún kan naira fún ẹ?","","",""
+"yo-multi-send-airtime","NG","Bẹ́ẹ̀ni, ṣe é.","Mo ti ra káàdì ẹgbẹ̀rún kan naira fún ẹ.","","",""
+"yo-general-saving","NG","Ṣé o lè gbà mí nímọ̀ràn bí mo ṣe lè máa fi owó pamọ́ lóṣooṣù?","Yorùbá: O dára ka fi ogorun kankan owó oṣù rẹ pamọ́ lẹ́sẹ̀kẹsẹ̀ kí o tó náwó. Lo àkántì ọ̀tọ̀ fún ìpamọ́ kí o má ṣe fọwọ́ kan án, bẹ́ẹ̀ yóò máa pọ̀ sí i lóṣooṣù.","","",""
+"yo-send","NG","Jọ̀ọ́, fi ẹgbẹ̀rún méjì naira ránṣẹ́ sí Mum.","Mo máa fi ẹgbẹ̀rún méjì naira ránṣẹ́ sí Mum, ṣe mo tẹ̀síwájú?","","",""
+"yo-send","NG","Bẹ́ẹ̀ni.","Mo ti fi ẹgbẹ̀rún méjì naira ránṣẹ́ sí Mum.","","",""

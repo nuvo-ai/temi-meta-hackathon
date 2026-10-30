@@ -27,7 +27,24 @@ interface Call {
     country: Country;
     history: Message[];
     lastSeen: number;
+    /** TwiML for a reply still being worked out, fetched by /voice/reply. */
+    pending?: Promise<string>;
 }
+
+/**
+ * Muse Spark takes about 1.3s to start answering. If the reply isn't ready by
+ * then, the caller hears a short acknowledgement instead of silence, and
+ * Twilio fetches the real reply from /voice/reply.
+ */
+const ACK_AFTER_MS = 800;
+const ACKS: Record<CountryCode, string[]> = {
+    NG: ['Okay.', 'Alright.', 'Mm.'],
+    KE: ['Sawa.', 'Okay.', 'Mm.'],
+    GH: ['Okay.', 'Alright.', 'Mm.'],
+    TZ: ['Sawa.', 'Haya.', 'Mm.'],
+    UG: ['Okay.', 'Kale.', 'Mm.'],
+};
+let ackTurn = 0;
 
 const calls = new Map<string, Call>();
 const CALL_TTL_MS = 60 * 60 * 1000;
@@ -68,6 +85,26 @@ function countryFor(from: string | undefined): Country {
     return countryFromNumber(from) ?? DEFAULT_COUNTRY;
 }
 
+/** Runs one caller turn on the brain and returns the TwiML that speaks Temi's reply. */
+async function answer(runtime: Runtime, req: FastifyRequest, callSid: string, call: Call): Promise<string> {
+    let spoken = '';
+    try {
+        for await (const event of runTurn({ ...runtime, callerId: callSid, history: call.history, country: call.country })) {
+            if (event.type === 'text') spoken += event.delta;
+            if (event.type === 'guard') req.log.info({ callSid, tool: event.tool, guard: event.result }, 'fraud check');
+            if (event.type === 'done') {
+                call.history.push(...event.messages);
+                req.log.info({ callSid, spoken, timings: event.timings, hops: event.hops }, 'voice turn');
+            }
+        }
+    } catch (err) {
+        req.log.error({ callSid, err: err instanceof Error ? err.message : String(err) }, 'voice turn failed');
+        call.history.pop();
+        return listen('Sorry, something went wrong on my side. Could you say that again?', call.country);
+    }
+    return listen(spoken.trim() || 'Is there anything else I can help with?', call.country);
+}
+
 export function registerVoice(app: FastifyInstance, runtime: Runtime): void {
     // Twilio posts form-encoded bodies; Fastify only parses JSON out of the box.
     app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body, done) => {
@@ -101,21 +138,21 @@ export function registerVoice(app: FastifyInstance, runtime: Runtime): void {
         if (!heard) return reply.send(listen("Sorry, I didn't catch that. Could you say it again?", call.country));
 
         call.history.push({ role: 'user', content: heard });
-        let spoken = '';
-        try {
-            for await (const event of runTurn({ ...runtime, callerId: callSid, history: call.history, country: call.country })) {
-                if (event.type === 'text') spoken += event.delta;
-                if (event.type === 'guard') req.log.info({ callSid, tool: event.tool, guard: event.result }, 'fraud check');
-                if (event.type === 'done') {
-                    call.history.push(...event.messages);
-                    req.log.info({ callSid, heard, spoken, timings: event.timings, hops: event.hops }, 'voice turn');
-                }
-            }
-        } catch (err) {
-            req.log.error({ callSid, err: err instanceof Error ? err.message : String(err) }, 'voice turn failed');
-            call.history.pop();
-            return reply.send(listen("Sorry, something went wrong on my side. Could you say that again?", call.country));
-        }
-        return reply.send(listen(spoken.trim() || 'Is there anything else I can help with?', call.country));
+        const pending = answer(runtime, req, callSid, call);
+        const ready = await Promise.race([pending, new Promise<null>((r) => setTimeout(r, ACK_AFTER_MS, null))]);
+        if (ready !== null) return reply.send(ready);
+        call.pending = pending;
+        const acks = ACKS[call.country.code];
+        return reply.send(`<?xml version="1.0" encoding="UTF-8"?><Response>${say(acks[ackTurn++ % acks.length]!)}<Redirect method="POST">/voice/reply</Redirect></Response>`);
+    });
+
+    app.post<{ Body: Record<string, string> }>('/voice/reply', async (req, reply) => {
+        if (!fromTwilio(req)) return reply.code(403).send();
+        const call = calls.get(req.body?.CallSid ?? '');
+        reply.type('text/xml');
+        if (!call?.pending) return reply.send(listen('Sorry, could you say that again?', call?.country ?? DEFAULT_COUNTRY));
+        const twiml = await call.pending;
+        call.pending = undefined;
+        return reply.send(twiml);
     });
 }

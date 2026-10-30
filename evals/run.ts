@@ -6,7 +6,7 @@ import { MockBank } from '../src/executors/mock-bank.js';
 import type { GuardDecision } from '../src/guard.js';
 import type { Message } from '../src/model.js';
 import { createRuntime } from '../src/runtime.js';
-import { judgeAnswer } from './judge.js';
+import { judgeAnswer, judgeLanguage } from './judge.js';
 import { fraudOutcome, percentile, score, spokenProblems, type EvalCase, type ExecutedTool, type Outcome } from './score.js';
 
 // Usage:
@@ -51,6 +51,8 @@ interface CaseResult {
     fraudOutcome?: ReturnType<typeof fraudOutcome>;
     /** General questions: the model judge's verdict on Temi's answer. */
     judge?: { pass: boolean; reason: string };
+    /** Non-English cases: did every Temi reply stay in the caller's language? Reported, not part of pass/fail. */
+    language?: { pass: boolean; reason: string };
     error?: string;
 }
 
@@ -140,6 +142,10 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
             if (!out.judge.pass) out.reasons.push(`judge: ${out.judge.reason}`);
             out.pass = out.reasons.length === 0;
         }
+        if (c.lang !== 'en') {
+            const temi = out.transcript.filter((t) => t.role === 'temi' && t.text).map((t) => t.text);
+            if (temi.length) out.language = await judgeLanguage({ lang: c.lang, caller: out.transcript.filter((t) => t.role === 'caller').map((t) => t.text), temi });
+        }
     } catch (err) {
         out.error = err instanceof Error ? err.message : String(err);
         out.reasons.push(`error: ${out.error}`);
@@ -157,6 +163,7 @@ for (const c of cases) {
     results.push(r);
     console.log(`${r.pass ? '✓' : '✗'} ${r.id}${r.fraudOutcome ? ` [${r.fraudOutcome}]` : ''}${r.pass ? '' : `  — ${r.reasons.join('; ')}`}`);
     if (r.judge) console.log(`    Temi: ${r.transcript.at(-1)?.text}`);
+    if (r.language && !r.language.pass) console.log(`    language slip: ${r.language.reason}`);
     // A bad key or no network fails every case the same way; stop instead of reporting 0%.
     if (r.error && /\b(401|403)\b/.test(r.error)) {
         console.error(`\nStopping: ${provider} rejected the API key. Check it in .env.`);
@@ -208,6 +215,7 @@ const summary = {
     fraudCheckP95: fmt(percentile(results.flatMap((r) => r.guard.map((g) => g.latencyMs)), 95)),
     // Fraud model timed out or errored, so the payment fell back to a PIN.
     fraudCheckUnavailable: `${results.flatMap((r) => r.guard).filter((g) => g.reasons.some((x) => x.startsWith('fraud model unavailable'))).length}/${results.flatMap((r) => r.guard).length}`,
+    stayedInLanguage: `${results.filter((r) => r.language?.pass).length}/${results.filter((r) => r.language).length} non-English cases`,
     spokeBeforeTool: `${results.reduce((n, r) => n + r.spokeBeforeTool.length, 0)}/${results.reduce((n, r) => n + r.toolTurns, 0)} tool turns`,
     fraudOutcomes: Object.fromEntries(results.filter((r) => r.fraudOutcome).map((r) => [r.id, r.fraudOutcome])),
     tokens: { input: inTok, output: outTok, turns, perTurnIn: turns ? Math.round(inTok / turns) : 0, perTurnOut: turns ? Math.round(outTok / turns) : 0, estimated: results.some((r) => r.tokensEstimated) },

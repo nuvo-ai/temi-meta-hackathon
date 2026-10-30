@@ -1,0 +1,8 @@
+"case","country","caller said","Temi said","natural? (yes/no)","meaning correct? (yes/no)","how a native speaker would say it"
+"ug-lg-balance","UG","Mbadde njagala okumanya ssente mmeka eziri ku akawunti yange.","Ku akawunti yo kuliko emitwalo amakumi ataano.","","",""
+"ug-lg-multi-send-airtime","UG","Weereza Mum emitwalo ebiri, era ongulire airtime ya lukumi.","Nkweereza Mum emitwalo ebiri era nkugulira airtime ya lukumi emu. Nkola ntyo?","","",""
+"ug-lg-multi-send-airtime","UG","Yee.","First transfer is done — now I'll buy that airtime. Nweereza Mum emitwalo ebiri. Era nkugulidde airtime ya lukumi emu.","","",""
+"ug-lg-general-late","UG","Nnyamba okuwandiika obubaka obumpi eri mukama wange nti nja kulwawo eddakiika amakumi abiri.","Mukama wange tuneebaze, nsaba okusonyiyibwa. Nja kulwawo eddakiika amakumi abiri olw'entambula. Oyagala nkyuseeko ekintu?","","",""
+"ug-lg-send","UG","Nsaba ompeererezeeko Mum emitwalo esatu.","Nkusindire Mum emitwalo esatu?","","",""
+"ug-lg-send","UG","Yee.","Nkutumiddemu Mum emitwalo esatu.","","",""
+"ug-lg-general-word","UG","Inflation kitegeeza ki? Nnyinyonnyola mu bufunze.","Inflation kitegeeza bbeeyi y'ebintu okulinnya okutwalira awamu. Ensonga nti n'ensimbi zo zigula bitono okusinga edda.","","",""

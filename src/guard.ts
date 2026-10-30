@@ -61,6 +61,8 @@ Decide:
 - "step_up": something is unusual but could be fine; require PIN verification.
 - "block": strong signs of a scam or coercion.
 
+Write reasons in short English. If a reason mentions the amount, copy it from the "Amount" line exactly; never work an amount out from the conversation.
+
 Reply with JSON only: {"decision": "allow" | "step_up" | "block", "reasons": ["short reason", ...]}`;
 
 function renderTranscript(transcript: Message[]): string {
@@ -71,12 +73,17 @@ function renderTranscript(transcript: Message[]): string {
         .join('\n');
 }
 
+function amountLine(input: GuardInput): string {
+    const amount = Number(input.args['amount']);
+    return Number.isFinite(amount) && amount > 0 ? `Amount: ${formatMoney(input.country ?? DEFAULT_COUNTRY, amount)}\n` : '';
+}
+
 export function guardMessages(input: GuardInput): Message[] {
     return [
         { role: 'system', content: guardPrompt(input.country ?? DEFAULT_COUNTRY) },
         {
             role: 'user',
-            content: `Proposed action: ${input.tool} ${JSON.stringify(input.args)}\nRecipient already saved: ${input.knownRecipient ? 'yes' : 'no'}\n\nConversation:\n${renderTranscript(input.transcript)}`,
+            content: `Proposed action: ${input.tool} ${JSON.stringify(input.args)}\n${amountLine(input)}Recipient already saved: ${input.knownRecipient ? 'yes' : 'no'}\n\nConversation:\n${renderTranscript(input.transcript)}`,
         },
     ];
 }

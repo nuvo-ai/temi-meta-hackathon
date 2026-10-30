@@ -1084,5 +1084,195 @@
       ],
       "answer": "Says a short message telling the boss the caller will be about twenty minutes late."
     }
+  },
+  {
+    "id": "gh-gpe-balance",
+    "country": "GH",
+    "lang": "gpe",
+    "category": "single",
+    "turns": [
+      "Chale, how much dey inside my account?"
+    ],
+    "expect": {
+      "tools": [
+        {
+          "name": "get_balance"
+        }
+      ]
+    }
+  },
+  {
+    "id": "gh-gpe-general-landlady",
+    "country": "GH",
+    "lang": "gpe",
+    "category": "general",
+    "turns": [
+      "Chale, help me write small message make I send my landlady say I go pay the rent on Friday."
+    ],
+    "expect": {
+      "forbid": [
+        "send_money",
+        "buy_airtime",
+        "buy_data"
+      ],
+      "answer": "Says a short, polite message to the landlady that the rent will be paid on Friday, ready to send."
+    }
+  },
+  {
+    "id": "gh-tw-send",
+    "country": "GH",
+    "lang": "tw",
+    "category": "single",
+    "turns": [
+      "Mesrɛ wo, fa sidi aduonum kɔma Mum."
+    ],
+    "replies": [
+      "Aane.",
+      "Aane, yɛ.",
+      "Aane."
+    ],
+    "expect": {
+      "tools": [
+        {
+          "name": "send_money",
+          "args": {
+            "recipient": "Mum",
+            "amount": 50
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "ug-lg-send",
+    "country": "UG",
+    "lang": "lg",
+    "category": "single",
+    "turns": [
+      "Nsaba ompeererezeeko Mum emitwalo esatu."
+    ],
+    "replies": [
+      "Yee.",
+      "Yee, kikole.",
+      "Yee."
+    ],
+    "expect": {
+      "tools": [
+        {
+          "name": "send_money",
+          "args": {
+            "recipient": "Mum",
+            "amount": 30000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "ug-lg-general-word",
+    "country": "UG",
+    "lang": "lg",
+    "category": "general",
+    "turns": [
+      "Inflation kitegeeza ki? Nnyinyonnyola mu bufunze."
+    ],
+    "expect": {
+      "forbid": [
+        "send_money",
+        "buy_airtime",
+        "buy_data"
+      ],
+      "answer": "Explains inflation correctly in plain words: prices rising over time so money buys less."
+    }
+  },
+  {
+    "id": "ke-sheng-airtime-self",
+    "country": "KE",
+    "lang": "sheng",
+    "category": "single",
+    "turns": [
+      "Niwekee airtime ya bob mia mbili, Safaricom."
+    ],
+    "replies": [
+      "Ee, sawa.",
+      "Ee.",
+      "Ee."
+    ],
+    "expect": {
+      "tools": [
+        {
+          "name": "buy_airtime",
+          "args": {
+            "recipient": "self",
+            "amount": 200
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "ha-send",
+    "lang": "ha",
+    "category": "single",
+    "turns": [
+      "Don Allah ka tura wa Mum naira dubu biyar."
+    ],
+    "replies": [
+      "Eh, to.",
+      "Eh.",
+      "Eh."
+    ],
+    "expect": {
+      "tools": [
+        {
+          "name": "send_money",
+          "args": {
+            "recipient": "Mum",
+            "amount": 5000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "yo-send",
+    "lang": "yo",
+    "category": "single",
+    "turns": [
+      "Jọ̀ọ́, fi ẹgbẹ̀rún méjì naira ránṣẹ́ sí Mum."
+    ],
+    "replies": [
+      "Bẹ́ẹ̀ni.",
+      "Bẹ́ẹ̀ni, ṣe é.",
+      "Bẹ́ẹ̀ni."
+    ],
+    "expect": {
+      "tools": [
+        {
+          "name": "send_money",
+          "args": {
+            "recipient": "Mum",
+            "amount": 2000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "tz-sw-general-word",
+    "country": "TZ",
+    "lang": "sw",
+    "category": "general",
+    "turns": [
+      "Mfumuko wa bei ni nini? Nieleze kwa ufupi."
+    ],
+    "expect": {
+      "forbid": [
+        "send_money",
+        "buy_airtime",
+        "buy_data"
+      ],
+      "answer": "Explains inflation correctly in plain words: prices rising over time so money buys less."
+    }
   }
 ]

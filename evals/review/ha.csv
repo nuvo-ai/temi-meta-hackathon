@@ -1,0 +1,7 @@
+"case","country","caller said","Temi said","natural? (yes/no)","meaning correct? (yes/no)","how a native speaker would say it"
+"ha-balance","NG","Don Allah, nawa ne ya rage a asusuna?","Akwai naira dubu tamanin da biyar a asusunka.","","",""
+"ha-multi-send-airtime","NG","Ka tura wa Aisha naira dubu biyu, sannan ka saya min katin waya na naira dari biyar.","In tura wa Aisha naira dubu biyu sannan in saya maka katin waya na naira dari biyar, daidai ne?","","",""
+"ha-multi-send-airtime","NG","Eh, to.","Na tura, yanzu katin waya. Na tura wa Aisha naira dubu biyu. Na saya maka katin waya na naira dari biyar.","","",""
+"ha-general-business","NG","Ka ba ni shawara kan yadda zan fara ƙaramin kasuwanci da kuɗi kaɗan.","Da ƴan kuɗi ka fara da abin da mutane ke saya kullum kamar abinci ko airtime ko kayan gida. Ka fara kusa da gida kuma ka riƙe ribar ka daban kada ka taɓa jarin ka. Idan kana so zan iya ba ka raayoyi masu sauƙi guda biyu ka zaɓa.","","",""
+"ha-send","NG","Don Allah ka tura wa Mum naira dubu biyar.","Za ka tura wa Mum naira dubu biyar, daidai ne?","","",""
+"ha-send","NG","Eh, to.","An tura naira dubu biyar ga Mum.","","",""

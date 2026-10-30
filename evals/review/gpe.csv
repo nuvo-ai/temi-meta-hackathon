@@ -1,0 +1,6 @@
+"case","country","caller said","Temi said","natural? (yes/no)","meaning correct? (yes/no)","how a native speaker would say it"
+"gh-gpe-multi-send-data","GH","Chale, send Kwame 50 cedis, then buy me MTN data, the 2GB one wey go last one month.","I go send fifty cedis to Kwame, e make I go ahead?","","",""
+"gh-gpe-multi-send-data","GH","Yes, do am.","Don send fifty cedis to Kwame. The 2GB for 30 days be twenty cedis for yourself, I make I buy am?","","",""
+"gh-gpe-multi-send-data","GH","Yes.","Don buy am. Your 2GB data for 30 days dey on.","","",""
+"gh-gpe-balance","GH","Chale, how much dey inside my account?","You get two thousand cedis inside your account.","","",""
+"gh-gpe-general-landlady","GH","Chale, help me write small message make I send my landlady say I go pay the rent on Friday.","Good evening Ma, I dey inform you say I go pay the rent on Friday, thank you for your patience. Make I change anything for you?","","",""

@@ -1,0 +1,6 @@
+"case","country","caller said","Temi said","natural? (yes/no)","meaning correct? (yes/no)","how a native speaker would say it"
+"ig-balance","NG","Biko, ego ole fọdụrụ n'akaụntụ m?","Ihe fọdụrụ n'akaụntụ gị bụ eighty five thousand naira.","","",""
+"ig-multi-send-airtime","NG","Zitere Mum puku naira atọ, ma zụtara m airtime nke otu puku naira.","Ka m zitere Mum puku naira atọ?","","",""
+"ig-multi-send-airtime","NG","Ee.","Ezitela Mum puku naira atọ. Ka m zụtara gị airtime otu puku naira?","","",""
+"ig-multi-send-airtime","NG","Ee, mee ya.","Azụtara gị airtime otu puku naira.","","",""
+"ig-general-birthday","NG","Biko nyere m aka dee ozi ekele ụbọchị ọmụmụ m ga-ezigara nne m.","Nne m oma, ekele ụbọchị ọmụmụ. Chineke gọzie gị ma chekwaa gị maka m. A hụrụ m gị n'anya nke ukwuu. Ị chọrọ ka m gbanwee ya?","","",""

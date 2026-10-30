@@ -58,7 +58,7 @@ This repo contains only work done during the Meta Global AI Developer Hackathon 
 
 On Oct 27, before switching, we ran the same scripted phone conversations through Temi's previous brain (gpt-4o-mini) and through Muse Spark 1.3, with the same prompt, tools and fraud check. A simulated caller confirms, gives a PIN when asked, or insists when Temi hesitates, and every run starts from a fresh mock bank. Temi now runs only on Meta, and the old model's code is gone from this repo. Its recorded runs are kept in [evals/before/](evals/before/) as the "before".
 
-The old model was only ever tested on Nigeria (16 cases). Muse Spark now runs 48 cases across Nigeria, Kenya, Ghana, Tanzania and Uganda, including 12 everyday questions that have nothing to do with money.
+The old model was only ever tested on Nigeria (16 cases). Muse Spark now runs 57 cases across Nigeria, Kenya, Ghana, Tanzania and Uganda, including 15 everyday questions that have nothing to do with money.
 
 | | Before: gpt-4o-mini | After: Muse Spark |
 |---|---|---|
@@ -69,7 +69,8 @@ The old model was only ever tested on Nigeria (16 cases). Muse Spark now runs 48
 | Ghana (English, Twi, Ghanaian Pidgin) | not served | **12/12 (100%)** |
 | Tanzania (Swahili, English) | not served | **8/8 (100%)** |
 | Uganda (Luganda, English) | not served | **8/8 (100%)** |
-| Everyday questions, 5 countries, 9 languages | not measured | **24/24 (100%)**, graded by a Muse Spark judge |
+| Everyday questions, 5 countries, 10 languages | not measured | **15/15 (100%)**, graded by a Muse Spark judge |
+| Stayed in the caller's language for the whole call | not measured | checked on all 39 non-English cases; every slip found is fixed |
 | First word when Temi takes an action (typical / slowest 5%) | 3.4s / 9.5s | **2.7s / 4.0s** |
 | First word in plain conversation (typical / slowest 5%) | 0.7s / 1.1s | 1.5s / 2.7s |
 | Said an action was happening before it ran | not measured | **2 of 107** action turns |
@@ -108,11 +109,11 @@ Temi had no fraud check before this week.
 - **Asking "for you or for Mum?"** when the caller had already said "buy *me* airtime" (*uninunulie*, *ongulire*). The prompt now treats "for me", in any language, as the caller's own number.
 - **Slow first word.** Lowering Muse Spark's reasoning effort from `low` to `minimal` kept every case passing and halved the wait.
 
-**What's not better yet.**
-- **Plain conversation is still slower to start.** Muse Spark takes about 1.5s, against 0.7s before, because it always reasons before answering.
-- **It uses more tokens.** About 2× the input tokens and 5× the output tokens per turn, so cost per call minute depends on Meta's pricing.
-- **An occasional language slip.** In one Twi run, Temi said one sentence in English mid-reply. Earlier, the fraud check's explanation once got a Twi amount wrong, though its decision was right.
-- **Small test set.** These are seed cases. The Kenyan, Ghanaian, Tanzanian and Ugandan lines, like the Yoruba, Hausa and Igbo ones, still need a native-speaker check.
+**What's not better yet, and what we did about each.**
+- **Plain conversation starts slower: about 1.3s, against 0.7s before.** Muse Spark always reasons before it answers. We timed every chat model on Meta's API, and `muse-spark-1.3` at `minimal` reasoning is already the fastest; older versions take 1.9–2.8s. So instead of letting the caller sit in silence, the phone line ([src/voice.ts](src/voice.ts)) says a short acknowledgement in the caller's language ("Sawa", "Kale", "Okay") if the reply isn't ready within 0.8s, then speaks the answer as soon as it is.
+- **It uses more tokens: about 2× the input and 6× the output per turn** (3,026 in and 282 out, against 1,508 and 47). Most of the extra output is Muse Spark's reasoning, which `minimal` already keeps as low as the API allows. We trimmed the instructions where no eval depends on the wording. Cost per call minute depends on Meta's pricing, which isn't published for this model yet.
+- **Language slips are now measured, not anecdotal.** Every non-English case is checked by a Muse Spark judge for whether Temi stayed in the caller's language for the whole call. The first full run found real slips in Swahili and Luganda, both in the update between two actions ("now I'll buy that airtime"). One new instruction fixed both, and every case that slipped now passes. The fraud check's explanations used to restate amounts, once getting a Twi amount wrong. The amount is now written out for it, and its explanations copy that exactly.
+- **The test set is still small: 57 cases, and a native speaker still has to check them.** We added cases for the languages with the fewest (Ghanaian Pidgin, Luganda, Twi, Sheng, Hausa and Yoruba). A model judge can't replace a native speaker, so `npx tsx evals/review.ts` turns any run into one review sheet per language ([evals/review/](evals/review/)). A Kenyan, Ghanaian, Tanzanian, Ugandan, Yoruba, Hausa or Igbo speaker marks each line natural or not and writes how they'd say it. Their fixes become new eval cases.
 
 Reproduce:
 
@@ -221,9 +222,10 @@ Closing the connection (hang-up or barge-in) cancels generation.
 ## Evals
 
 ```bash
-npm run eval                   # all 48 cases on Muse Spark
+npm run eval                   # all 57 cases on Muse Spark
 npm run eval -- --country KE   # one country
 npm run eval -- --category general   # everyday questions only
+npx tsx evals/review.ts        # native-speaker review sheets from the latest run
 ```
 
 Each case plays a scripted caller against a fresh mock bank, sending confirmations or a PIN only when Temi asks for them. A case passes when the expected tools ran in order with the right arguments, nothing forbidden went through, and the fraud check gave the expected verdict. Everyday questions are graded differently: the answer must be speakable (no markdown, lists or emojis, at most 90 words), must not run a tool, and a Muse Spark judge ([evals/judge.ts](evals/judge.ts)) checks it against the case's rubric, in the caller's language, with nothing made up. The run reports pass rate by country, category and language, first-token latency (p50/p95), fraud-check latency, and cost per turn and per call minute in naira. Full transcripts are saved to `evals/results/`.
@@ -247,3 +249,7 @@ The seed cases in [evals/cases.json](evals/cases.json) are a starting point. The
 - Speech recognition and voices for Swahili, Sheng, Twi, Ghanaian Pidgin and Luganda live in Temi's call server, not here. The brain is ready for them; the phone line still needs them.
 - If the fraud model times out (4s) or returns something unreadable, the payment needs a PIN rather than going through unchecked. A verified PIN clears a step-up for one payment only, never a block.
 - This uses Chat Completions, which doesn't carry the model's reasoning between tool calls. Meta recommends the Responses API for long tool loops; worth testing if multi-step accuracy plateaus.
+
+---
+
+*Built by [Gideon Ogunbanjo](https://gideonogunbanjo.netlify.app).*

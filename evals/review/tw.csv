@@ -1,0 +1,7 @@
+"case","country","caller said","Temi said","natural? (yes/no)","meaning correct? (yes/no)","how a native speaker would say it"
+"gh-tw-balance","GH","Mepa wo kyɛw, sika ahe na aka wɔ me akawnt no mu?","Sika a aka wɔ w'akawnt no mu yɛ sidi mpem abien.","","",""
+"gh-tw-multi-send-airtime","GH","Fa sidi aduonum kɔma Mum, na tɔ airtime sidi du ma me.","Sidi aduonum kɔma Mum na sidi du airtime ma wo ara, yɛ?","","",""
+"gh-tw-multi-send-airtime","GH","Aane.","Maka sidi aduonum ama Mum, na matɔ sidi du airtime ama wo.","","",""
+"gh-tw-general-message","GH","Boa me na menkyerɛw nkra tiawa nkɔma me wɔfa sɛ mɛba fie Kwasiada.","Wɔfa mekyia wo paa, mɛba fie Kwasiada. Ka kyerɛ me sɛ wopɛ sɛ mesesa biribi.","","",""
+"gh-tw-send","GH","Mesrɛ wo, fa sidi aduonum kɔma Mum.","Sidi aduonum a wopɛ sɛ memfa mma Mum no, memmfa nkɔ anaa","","",""
+"gh-tw-send","GH","Aane.","Mafa sidi aduonum ama Mum. Waka a aka yɛ sidi apem ahankron aduonum.","","",""
