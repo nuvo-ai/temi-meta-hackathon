@@ -1,16 +1,11 @@
 import 'dotenv/config';
 
-export type ProviderName = 'meta' | 'baseline';
-
 export interface ProviderConfig {
-    name: ProviderName;
     apiKey: string;
     baseURL: string;
     model: string;
-    /** Extra body fields this provider accepts (e.g. reasoning_effort for Muse Spark). */
+    /** Extra body fields Muse Spark accepts, e.g. reasoning_effort. */
     extraBody: Record<string, unknown>;
-    /** Whether the provider returns token usage on streams via stream_options. */
-    streamUsage: boolean;
     priceInPerM: number;
     priceOutPerM: number;
 }
@@ -21,51 +16,51 @@ const num = (key: string, fallback: number): number => {
     return Number.isFinite(v) && process.env[key] !== '' && process.env[key] !== undefined ? v : fallback;
 };
 
-export function providerConfig(name: ProviderName): ProviderConfig {
-    if (name === 'meta') {
-        return {
-            name,
-            apiKey: env('MODEL_API_KEY'),
-            baseURL: env('META_BASE_URL', 'https://api.meta.ai/v1'),
-            model: env('META_MODEL', 'muse-spark-1.3'),
-            extraBody: { reasoning_effort: env('META_REASONING_EFFORT', 'low') },
-            // Not confirmed for the Meta Model API yet; token counts fall back to an estimate.
-            streamUsage: env('META_STREAM_USAGE') === 'true',
-            priceInPerM: num('META_PRICE_IN_PER_M', 0),
-            priceOutPerM: num('META_PRICE_OUT_PER_M', 0),
-        };
-    }
+/** Muse Spark on the Meta Model API: the conversation model. */
+export function providerConfig(): ProviderConfig {
     return {
-        name,
-        apiKey: env('BASELINE_API_KEY'),
-        baseURL: env('BASELINE_BASE_URL', 'https://api.openai.com/v1'),
-        model: env('BASELINE_MODEL', 'gpt-4o-mini'),
-        extraBody: { temperature: 0.7 },
-        streamUsage: true,
-        priceInPerM: num('BASELINE_PRICE_IN_PER_M', 0.15),
-        priceOutPerM: num('BASELINE_PRICE_OUT_PER_M', 0.6),
+        apiKey: env('MODEL_API_KEY'),
+        baseURL: env('META_BASE_URL', 'https://api.meta.ai/v1'),
+        model: env('META_MODEL', 'muse-spark-1.3'),
+        // minimal: same 36/36 on the evals as low, with plain turns starting in
+        // about 1.3s instead of 2–3s and half the output tokens.
+        extraBody: { reasoning_effort: env('META_REASONING_EFFORT', 'minimal') },
+        priceInPerM: num('META_PRICE_IN_PER_M', 0),
+        priceOutPerM: num('META_PRICE_OUT_PER_M', 0),
     };
 }
 
 export function guardProviderConfig(): ProviderConfig {
-    const base = providerConfig('meta');
+    const base = providerConfig();
     return {
         ...base,
         model: env('GUARD_MODEL', base.model),
-        extraBody: { reasoning_effort: env('GUARD_REASONING_EFFORT', 'medium') },
+        // minimal matched medium on evals/guard-cases.json at about half the latency;
+        // medium blew the 4s budget on long, messy calls.
+        extraBody: { reasoning_effort: env('GUARD_REASONING_EFFORT', 'minimal') },
     };
 }
 
 export const config = {
-    provider: (env('PROVIDER', 'meta') === 'baseline' ? 'baseline' : 'meta') as ProviderName,
     port: num('PORT', 8787),
     brainApiKey: env('BRAIN_API_KEY'),
     toolExecutor: env('TOOL_EXECUTOR', 'mock') as 'mock' | 'http',
     toolExecutorUrl: env('TOOL_EXECUTOR_URL'),
     toolExecutorKey: env('TOOL_EXECUTOR_KEY'),
+    /** Nigeria's fraud-check limits in naira; other countries set theirs in src/countries.ts. */
     guard: {
-        stepUpNgn: num('GUARD_STEP_UP_NGN', 50_000),
-        newRecipientStepUpNgn: num('GUARD_NEW_RECIPIENT_STEP_UP_NGN', 10_000),
+        stepUp: num('GUARD_STEP_UP_NGN', 50_000),
+        newRecipientStepUp: num('GUARD_NEW_RECIPIENT_STEP_UP_NGN', 10_000),
     },
     usdToNgn: num('USD_TO_NGN', 1500),
+    /** Live demo calls through Twilio: src/voice.ts. */
+    voice: {
+        /** Public https URL Twilio calls, e.g. the ngrok URL. Needed only to check Twilio's signature. */
+        publicUrl: env('PUBLIC_URL'),
+        twilioAuthToken: env('TWILIO_AUTH_TOKEN'),
+        /** Optional Twilio <Say> voice, e.g. Polly.Ayanda-Neural. Empty uses Twilio's default. */
+        twilioVoice: env('TWILIO_VOICE'),
+        /** Force a country for every call (NG, KE, GH, TZ or UG), e.g. to demo Kenya from a Nigerian phone. */
+        country: env('VOICE_COUNTRY'),
+    },
 };

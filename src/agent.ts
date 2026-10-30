@@ -1,8 +1,9 @@
+import { DEFAULT_COUNTRY, type Country } from './countries.js';
 import type { ToolExecutor } from './executors/types.js';
 import type { FraudGuard, GuardResult } from './guard.js';
 import type { Message, ModelClient, ToolCall, Usage } from './model.js';
 import { systemPrompt } from './prompt.js';
-import { MONEY_TOOLS, SLOW_TOOLS, TOOLS, redactArgs } from './tools.js';
+import { MONEY_TOOLS, SLOW_TOOLS, redactArgs, toolsFor } from './tools.js';
 
 export type AgentEvent =
     | { type: 'text'; delta: string }
@@ -25,6 +26,8 @@ export interface TurnOptions {
     callerId: string;
     /** Conversation so far, without a system message: user, assistant and tool messages. */
     history: Message[];
+    /** Caller's country: currency, networks, languages and scam patterns. Defaults to Nigeria. */
+    country?: Country;
     profile?: string;
     signal?: AbortSignal;
     maxHops?: number;
@@ -59,11 +62,18 @@ export function pinVerifiedForNextPayment(messages: Message[]): boolean {
     return false;
 }
 
-async function isKnownRecipient(executor: ToolExecutor, callerId: string, recipient: unknown): Promise<boolean> {
+/** Length of the leading text made of finished sentences that already have more text after them. */
+export function completedSentences(text: string): number {
+    let cut = 0;
+    for (const m of text.matchAll(/[.!?…]["'”’)]*\s+(?=\S)/g)) cut = m.index + m[0].length;
+    return cut;
+}
+
+async function isKnownRecipient(executor: ToolExecutor, ctx: { callerId: string; country: Country }, recipient: unknown): Promise<boolean> {
     const r = String(recipient ?? '').trim().toLowerCase();
     if (!r || r === 'self') return true;
     try {
-        const res = (await executor.execute('list_beneficiaries', {}, { callerId })) as {
+        const res = (await executor.execute('list_beneficiaries', {}, { callerId: ctx.callerId, country: ctx.country.code })) as {
             beneficiaries?: Array<{ nickname?: string; name?: string }>;
         };
         return (res.beneficiaries ?? []).some((b) => b.nickname?.toLowerCase() === r || b.name?.toLowerCase() === r);
@@ -81,18 +91,41 @@ async function isKnownRecipient(executor: ToolExecutor, callerId: string, recipi
 export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, void, void> {
     const { model, executor, guard, callerId, signal } = opts;
     const maxHops = opts.maxHops ?? 4;
+    const country = opts.country ?? DEFAULT_COUNTRY;
+    const tools = toolsFor(country);
     const started = Date.now();
     let firstTokenMs: number | null = null;
     const usage: Usage = { inputTokens: 0, outputTokens: 0, estimated: false };
     const produced: Message[] = [];
     const convo = (): Message[] => [...opts.history, ...produced];
 
+    let spoken = '';
+    let toolsRan = false;
+
     for (let hop = 1; hop <= maxHops; hop++) {
-        const gen = model.stream([{ role: 'system', content: systemPrompt(opts.profile) }, ...convo()], TOOLS, signal);
+        const gen = model.stream([{ role: 'system', content: systemPrompt(country, opts.profile) }, ...convo()], tools, signal);
+        let hopSpoken = '';
+        // The newest sentence waits until the next one starts (the call server
+        // speaks whole sentences anyway), so "I'll send it now." can be dropped
+        // if the model turns out to be calling a tool instead.
+        let held = '';
+        const say = function* (text: string): Generator<AgentEvent, void, void> {
+            if (firstTokenMs === null) firstTokenMs = Date.now() - started;
+            // Text from an earlier hop ("One moment.") must not run into this one ("One moment.Done").
+            if (!hopSpoken && spoken && !/\s$/.test(spoken) && !/^\s/.test(text)) text = ` ${text}`;
+            hopSpoken += text;
+            spoken += text;
+            yield { type: 'text', delta: text };
+        };
+
         let next = await gen.next();
         while (!next.done) {
-            if (firstTokenMs === null) firstTokenMs = Date.now() - started;
-            yield { type: 'text', delta: next.value };
+            held += next.value;
+            const cut = completedSentences(held);
+            if (cut > 0) {
+                yield* say(held.slice(0, cut));
+                held = held.slice(cut);
+            }
             next = await gen.next();
         }
         const assembled = next.value;
@@ -101,12 +134,19 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
         usage.estimated ||= assembled.usage.estimated;
 
         if (assembled.toolCalls.length === 0) {
-            if (assembled.content.trim()) produced.push({ role: 'assistant', content: assembled.content });
+            if (held) yield* say(held);
+            if (hopSpoken.trim()) produced.push({ role: 'assistant', content: hopSpoken.trim() });
             yield { type: 'done', messages: produced, usage, timings: { firstTokenMs, totalMs: Date.now() - started }, hops: hop };
             return;
         }
 
-        produced.push({ role: 'assistant', content: assembled.content || null, tool_calls: assembled.toolCalls });
+        // Before the first tool runs, a held sentence is an announcement ("I'll
+        // send that now") that the fraud check may yet make untrue: drop it and
+        // let the call server's filler cover the wait. After a tool has run, it
+        // is usually a result ("I've sent it to Mum"), so it is kept.
+        if (held && toolsRan) yield* say(held);
+        toolsRan = true;
+        produced.push({ role: 'assistant', content: hopSpoken.trim() || null, tool_calls: assembled.toolCalls });
         for (const call of assembled.toolCalls) {
             const result = yield* runTool(call, opts, convo());
             produced.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(result) });
@@ -122,6 +162,7 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
 async function* runTool(call: ToolCall, opts: TurnOptions, transcript: Message[]): AsyncGenerator<AgentEvent, unknown, void> {
     const { name } = call.function;
     const args = parseArgs(call.function.arguments);
+    const country = opts.country ?? DEFAULT_COUNTRY;
     yield { type: 'tool_call', id: call.id, name, args: redactArgs(name, args), slow: SLOW_TOOLS.has(name) };
 
     if (MONEY_TOOLS.has(name)) {
@@ -129,8 +170,9 @@ async function* runTool(call: ToolCall, opts: TurnOptions, transcript: Message[]
             tool: name,
             args,
             transcript,
-            knownRecipient: await isKnownRecipient(opts.executor, opts.callerId, args['recipient']),
+            knownRecipient: await isKnownRecipient(opts.executor, { callerId: opts.callerId, country }, args['recipient']),
             verified: pinVerifiedForNextPayment(transcript),
+            country,
         });
         yield { type: 'guard', id: call.id, tool: name, result: verdict };
         if (verdict.decision !== 'allow') {
@@ -145,7 +187,7 @@ async function* runTool(call: ToolCall, opts: TurnOptions, transcript: Message[]
 
     let result: unknown;
     try {
-        result = await opts.executor.execute(name, args, { callerId: opts.callerId });
+        result = await opts.executor.execute(name, args, { callerId: opts.callerId, country: country.code });
     } catch (err) {
         result = { error: err instanceof Error ? err.message : 'tool failed' };
     }

@@ -2,8 +2,10 @@ import { timingSafeEqual } from 'node:crypto';
 import Fastify from 'fastify';
 import { runTurn } from './agent.js';
 import { config } from './config.js';
+import { COUNTRIES, DEFAULT_COUNTRY, countryFromNumber, isCountryCode } from './countries.js';
 import type { Message } from './model.js';
 import { createRuntime } from './runtime.js';
+import { registerVoice } from './voice.js';
 
 const runtime = createRuntime();
 const app = Fastify({ logger: { level: 'info' } });
@@ -26,6 +28,10 @@ app.get('/health', async () => ({ ok: true, model: runtime.model.label }));
 interface TurnBody {
     callerId: string;
     history: Message[];
+    /** "NG", "KE" or "GH". If missing, taken from callerNumber, then Nigeria. */
+    country?: string;
+    /** Caller's number in international format, e.g. +254712345678. */
+    callerNumber?: string;
     profile?: string;
 }
 
@@ -36,8 +42,12 @@ interface TurnBody {
  * append to the caller's history.
  */
 app.post<{ Body: TurnBody }>('/v1/turn', async (req, reply) => {
-    const { callerId, history, profile } = req.body ?? ({} as TurnBody);
+    const { callerId, history, profile, country: code, callerNumber } = req.body ?? ({} as TurnBody);
     if (!callerId || !Array.isArray(history)) return reply.code(400).send({ error: 'callerId and history are required' });
+    if (code !== undefined && !isCountryCode(code)) {
+        return reply.code(400).send({ error: `unsupported country "${code}"; supported: ${Object.keys(COUNTRIES).join(', ')}` });
+    }
+    const country = code ? COUNTRIES[code] : (countryFromNumber(callerNumber) ?? DEFAULT_COUNTRY);
 
     // Caller hung up or barged in: stop generating. (The request's own 'close'
     // fires once the body is read, so watch the response instead.)
@@ -56,9 +66,9 @@ app.post<{ Body: TurnBody }>('/v1/turn', async (req, reply) => {
     const send = (event: unknown) => reply.raw.write(`data: ${JSON.stringify(event)}\n\n`);
 
     try {
-        for await (const event of runTurn({ ...runtime, callerId, history, profile, signal: abort.signal })) {
+        for await (const event of runTurn({ ...runtime, callerId, history, country, profile, signal: abort.signal })) {
             send(event);
-            if (event.type === 'guard') req.log.info({ callerId, tool: event.tool, guard: event.result }, 'fraud check');
+            if (event.type === 'guard') req.log.info({ callerId, country: country.code, tool: event.tool, guard: event.result }, 'fraud check');
             if (event.type === 'done') req.log.info({ callerId, timings: event.timings, hops: event.hops, usage: event.usage }, 'turn done');
         }
     } catch (err) {
@@ -70,6 +80,8 @@ app.post<{ Body: TurnBody }>('/v1/turn', async (req, reply) => {
         reply.raw.end();
     }
 });
+
+registerVoice(app, runtime);
 
 app.listen({ port: config.port, host: '0.0.0.0' }).catch((err) => {
     app.log.error(err);
