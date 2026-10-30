@@ -10,7 +10,9 @@ export interface ProviderConfig {
     priceOutPerM: number;
 }
 
-const env = (key: string, fallback = ''): string => process.env[key] ?? fallback;
+// Trimmed: a value pasted into a dashboard with a trailing space or newline
+// ("muse-spark-1.3 ") otherwise reaches the API and fails as model_not_found.
+const env = (key: string, fallback = ''): string => process.env[key]?.trim() ?? fallback;
 const num = (key: string, fallback: number): number => {
     const v = Number(process.env[key]);
     return Number.isFinite(v) && process.env[key] !== '' && process.env[key] !== undefined ? v : fallback;

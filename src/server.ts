@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import Fastify from 'fastify';
 import { runTurn } from './agent.js';
-import { config } from './config.js';
+import { config, providerConfig } from './config.js';
 import { COUNTRIES, DEFAULT_COUNTRY, countryFromNumber, isCountryCode } from './countries.js';
 import type { Message } from './model.js';
 import { createRuntime } from './runtime.js';
@@ -97,7 +97,23 @@ app.post<{ Body: TurnBody }>('/v1/turn', async (req, reply) => {
 registerVoice(app, runtime);
 startReminderCalls(runtime.reminders, app.log);
 
-app.listen({ port: config.port, host: '0.0.0.0' }).catch((err) => {
-    app.log.error(err);
-    process.exit(1);
-});
+/** Logs once at startup whether the Meta key can see the configured model, so a wrong key or model shows up before the first call does. */
+async function checkModelAccess(): Promise<void> {
+    const { baseURL, apiKey, model } = providerConfig();
+    try {
+        const res = await fetch(`${baseURL}/models`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(10_000) });
+        if (!res.ok) return app.log.error({ status: res.status, model: JSON.stringify(model) }, 'Meta Model API rejected the key: check MODEL_API_KEY');
+        const ids = ((await res.json()) as { data?: Array<{ id: string }> }).data?.map((m) => m.id) ?? [];
+        if (ids.includes(model)) app.log.info({ model }, 'Meta model available');
+        else app.log.error({ model: JSON.stringify(model), available: ids }, 'this key cannot use the configured model: check META_MODEL and MODEL_API_KEY');
+    } catch (err) {
+        app.log.error({ err: err instanceof Error ? err.message : String(err) }, 'could not reach the Meta Model API');
+    }
+}
+
+app.listen({ port: config.port, host: '0.0.0.0' })
+    .then(() => checkModelAccess())
+    .catch((err) => {
+        app.log.error(err);
+        process.exit(1);
+    });
