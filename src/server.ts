@@ -26,6 +26,18 @@ app.addHook('onRequest', async (req, reply) => {
 
 app.get('/health', async () => ({ ok: true, model: runtime.model.label }));
 
+// Anyone who opens the service URL in a browser lands here, not on a 404.
+app.get('/', async (_req, reply) =>
+    reply.type('text/html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Temi AI</title>
+<style>:root{--bg:#fff;--fg:#111;--muted:#555;--accent:#0a7d4f}@media (prefers-color-scheme:dark){:root{--bg:#111;--fg:#f2f2f2;--muted:#aaa;--accent:#3ccf8e}}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:18px/1.5 system-ui,-apple-system,sans-serif;text-align:center;padding:0 16px}
+a.call{display:inline-block;margin:16px 0;padding:14px 28px;border-radius:999px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;font-size:22px}p{color:var(--muted);margin:4px 0}a{color:var(--accent)}</style></head>
+<body><main><h1>Temi AI is running</h1><p>A voice agent anyone can call from a normal phone: no smartphone, data or app.</p>
+<a class="call" href="tel:+17755872049">📞 Call Temi: +1 (775) 587-2049</a>
+<p>Powered by Meta's ${runtime.model.label.replace('meta:', '')}. Built by Team Temi AI by <a href="https://nuvoai.africa">NuvoAI</a>.</p>
+<p><a href="https://github.com/nuvo-ai/temi-meta-hackathon">Code on GitHub</a></p></main></body></html>`),
+);
+
 interface TurnBody {
     callerId: string;
     history: Message[];
