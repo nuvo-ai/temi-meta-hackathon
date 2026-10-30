@@ -185,6 +185,8 @@ export function registerVoice(app: FastifyInstance, runtime: Runtime): void {
         call.lastSeen = Date.now();
         reply.type('text/xml');
 
+        // What Twilio's speech recognition heard, so an empty or garbled transcript is visible in the logs.
+        req.log.info({ callSid, heard, confidence: req.body?.Confidence, language: SPEECH_LANGUAGE[call.country.code] }, 'caller said');
         if (!heard) return reply.send(listen("Sorry, I didn't catch that. Could you say it again?", call.country));
 
         call.history.push({ role: 'user', content: heard });
