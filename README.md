@@ -2,7 +2,7 @@
 
 *Built by Team Temi AI by [NuvoAI](https://nuvoai.africa).*
 
-> 📞 **Call Temi:** [+1 (775) 587-2049](tel:+17755872049)
+> 📞 **Call Temi:** [+1 (775) 587-2049](https://nuvo-ai.github.io/temi-meta-hackathon/call/) (tap to call)
 
 **Temi AI** is a voice agent built by [NuvoAI](https://nuvoai.africa) that anyone can reach with a normal phone call or SMS: no smartphone, no data, no app. It speaks the way people actually talk, switching languages mid-sentence. By voice, it offers three kinds of AI service:
 
