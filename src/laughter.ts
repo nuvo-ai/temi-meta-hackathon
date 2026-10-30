@@ -23,7 +23,7 @@ export const MAX_LAUGHS_PER_CALL = 2;
 const MARKER = /\[(chuckle|laugh)\]/gi;
 const STAGE_DIRECTION = /\[[a-z][a-z\s-]{0,20}\]/gi;
 /** Tool results that mean the moment is serious. */
-const SERIOUS_STATUSES = new Set(['blocked', 'needs_verification', 'refused']);
+const SERIOUS_STATUSES = new Set(['blocked', 'needs_verification', 'needs_readback', 'refused']);
 
 const textOf = (m: Message): string => (m.role === 'assistant' && typeof m.content === 'string' ? m.content : '');
 

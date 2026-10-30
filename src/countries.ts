@@ -37,6 +37,8 @@ export interface Country {
     scams: string[];
     /** Who a pressured caller should call, in the caller's words. */
     helpLine: string;
+    /** Spoken numbers here are easy to mishear or mistranslate: money is only moved after Temi reads the amount back in digits. */
+    readBackDigits?: boolean;
 }
 
 export const COUNTRIES: Record<CountryCode, Country> = {
@@ -174,6 +176,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
             'jobs abroad (often in the Middle East) that need a fee for visas, medicals or "processing"',
         ],
         helpLine: 'their bank',
+        readBackDigits: true,
     },
 };
 

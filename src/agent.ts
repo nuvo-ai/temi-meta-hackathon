@@ -1,7 +1,8 @@
-import { DEFAULT_COUNTRY, type Country } from './countries.js';
+import { DEFAULT_COUNTRY, formatMoney, type Country } from './countries.js';
 import type { ToolExecutor } from './executors/types.js';
 import type { FraudGuard, GuardResult } from './guard.js';
 import { LaughGate } from './laughter.js';
+import { amountReadBackInDigits, pinsSaid, withoutInternalNotes, withoutPins } from './speech.js';
 import { ownerOf, type Memory } from './memory.js';
 import type { Message, ModelClient, ToolCall, Usage } from './model.js';
 import { systemPrompt } from './prompt.js';
@@ -117,7 +118,7 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
         // if the model turns out to be calling a tool instead.
         let held = '';
         const say = function* (text: string): Generator<AgentEvent, void, void> {
-            text = laughs.filter(text);
+            text = laughs.filter(withoutPins(withoutInternalNotes(text), pinsSaid(convo())));
             if (!text.trim()) return;
             if (firstTokenMs === null) firstTokenMs = Date.now() - started;
             // Text from an earlier hop ("One moment.") must not run into this one ("One moment.Done").
@@ -174,6 +175,18 @@ async function* runTool(call: ToolCall, opts: TurnOptions, transcript: Message[]
     const args = parseArgs(call.function.arguments);
     const country = opts.country ?? DEFAULT_COUNTRY;
     yield { type: 'tool_call', id: call.id, name, args: redactArgs(name, args), slow: SLOW_TOOLS.has(name) };
+
+    // Where spoken numbers are error-prone, money only moves once the caller
+    // has heard the exact amount in digits and said yes to it.
+    const amount = Number(args['amount']);
+    if (MONEY_TOOLS.has(name) && country.readBackDigits && Number.isFinite(amount) && !amountReadBackInDigits(amount, transcript)) {
+        const result = {
+            status: 'needs_readback',
+            message: `Before sending, read the amount back in digits exactly as it will be sent (${formatMoney(country, amount)}) with the recipient, and wait for a clear yes.`,
+        };
+        yield { type: 'tool_result', id: call.id, name, result };
+        return result;
+    }
 
     if (MONEY_TOOLS.has(name)) {
         const verdict = await opts.guard.check({
