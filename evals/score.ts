@@ -12,11 +12,13 @@ export interface EvalCase {
     country?: CountryCode;
     /** en, Nigerian Pidgin, Yoruba, Hausa, Igbo, Swahili, Sheng, Twi, Ghanaian Pidgin, Luganda. */
     lang: 'en' | 'pcm' | 'yo' | 'ha' | 'ig' | 'sw' | 'sheng' | 'tw' | 'gpe' | 'lg';
-    category: 'single' | 'multi' | 'clarify' | 'fraud' | 'general' | 'honesty' | 'reminder';
+    category: 'single' | 'multi' | 'clarify' | 'fraud' | 'general' | 'honesty' | 'reminder' | 'memory';
     /** Caller lines, always sent in order. */
     turns: string[];
     /** Outbound reminder call: what the caller asked to be reminded of. Temi speaks first. */
     reminderCall?: string;
+    /** Memory: caller lines for a second, later call from the same number, with a fresh conversation. */
+    nextCall?: string[];
     /** Follow-up caller lines (confirmations, PIN) sent one at a time only while the case isn't yet satisfied. */
     replies?: string[];
     expect: {

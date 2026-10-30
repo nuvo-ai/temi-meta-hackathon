@@ -65,6 +65,17 @@ export function toolsFor(country: Country): Tool[] {
             },
             ['what', 'when'],
         ),
+        fn(
+            'remember',
+            'Save one lasting fact about the caller for future calls. To correct a memory, pass its id as replaces.',
+            {
+                fact: { type: 'string', description: 'One short sentence in English, e.g. "Prefers to be called Mama Tunde." or "Gets paid on the 25th."' },
+                category: { type: 'string', enum: ['identity', 'people', 'place', 'work', 'money_habits', 'preferences', 'other'] },
+                replaces: { type: 'string', description: 'Id of the memory this corrects, e.g. "m3".' },
+            },
+            ['fact', 'category'],
+        ),
+        fn('forget', 'Delete a memory about the caller, or all of them.', { id: { type: 'string', description: 'A memory id like "m3", or "all".' } }, ['id']),
         fn('list_reminders', "List the caller's upcoming reminders.", {}),
         fn('cancel_reminder', 'Cancel one of the caller\'s reminders.', { id: { type: 'string', description: 'From list_reminders or set_reminder.' } }, ['id']),
     ];

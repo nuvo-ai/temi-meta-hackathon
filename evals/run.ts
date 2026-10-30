@@ -121,6 +121,12 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
     const outcome = (): Outcome => ({ executed, attempted: out.tools.map((t) => t.name), guardDecisions: guard.map((g) => g.decision) });
     try {
         for (const line of c.turns) await say(line);
+        if (c.nextCall) {
+            // Hang up and call again: the conversation starts over, memories stay.
+            history.length = 0;
+            out.transcript.push({ role: 'caller', text: '(hangs up, calls again later)' });
+            for (const line of c.nextCall) await say(line);
+        }
         // Like a real caller, give the mock bank's PIN whenever Temi asks for it
         // (up to twice), otherwise send the case's next scripted reply.
         const replies = [...(c.replies ?? [])];
@@ -141,7 +147,7 @@ async function runCase(c: EvalCase): Promise<CaseResult> {
             const answer = out.transcript.at(-1)?.text ?? '';
             for (const p of spokenProblems(answer)) out.reasons.push(`answer: ${p}`);
             if (c.category === 'general' && out.tools.length > 0) out.reasons.push(`answered a general question with tools: ${out.tools.map((t) => t.name).join(', ')}`);
-            out.judge = await judgeAnswer({ question: c.turns.at(-1)!, answer, lang: c.lang, rubric: c.expect.answer });
+            out.judge = await judgeAnswer({ question: (c.nextCall ?? c.turns).at(-1)!, answer, lang: c.lang, rubric: c.expect.answer });
             if (!out.judge.pass) out.reasons.push(`judge: ${out.judge.reason}`);
             out.pass = out.reasons.length === 0;
         }

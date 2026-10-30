@@ -8,7 +8,7 @@ import { createRuntime } from './runtime.js';
 import { startReminderCalls } from './reminders.js';
 import { registerVoice } from './voice.js';
 
-const runtime = createRuntime();
+const runtime = createRuntime(undefined, { memoryFile: config.memoryFile || undefined });
 const app = Fastify({ logger: { level: 'info' } });
 
 function authorized(header: string | undefined): boolean {

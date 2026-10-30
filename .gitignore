@@ -6,3 +6,4 @@ dist/
 *.log
 evals/results/*.json
 !evals/results/.gitkeep
+data/

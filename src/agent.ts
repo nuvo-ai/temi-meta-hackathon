@@ -1,6 +1,7 @@
 import { DEFAULT_COUNTRY, type Country } from './countries.js';
 import type { ToolExecutor } from './executors/types.js';
 import type { FraudGuard, GuardResult } from './guard.js';
+import { ownerOf, type Memory } from './memory.js';
 import type { Message, ModelClient, ToolCall, Usage } from './model.js';
 import { systemPrompt } from './prompt.js';
 import { MONEY_TOOLS, SLOW_TOOLS, redactArgs, toolsFor } from './tools.js';
@@ -23,6 +24,8 @@ export interface TurnOptions {
     model: ModelClient;
     executor: ToolExecutor;
     guard: FraudGuard;
+    /** What Temi remembers about callers; shown to the model on every hop. */
+    memory?: Memory;
     callerId: string;
     /** Caller's number in international format, when known. */
     callerNumber?: string;
@@ -105,7 +108,7 @@ export async function* runTurn(opts: TurnOptions): AsyncGenerator<AgentEvent, vo
     let toolsRan = false;
 
     for (let hop = 1; hop <= maxHops; hop++) {
-        const gen = model.stream([{ role: 'system', content: systemPrompt(country, opts.profile) }, ...convo()], tools, signal);
+        const gen = model.stream([{ role: 'system', content: systemPrompt(country, opts.profile, Date.now(), opts.memory?.forPrompt(ownerOf(opts))) }, ...convo()], tools, signal);
         let hopSpoken = '';
         // The newest sentence waits until the next one starts (the call server
         // speaks whole sentences anyway), so "I'll send it now." can be dropped

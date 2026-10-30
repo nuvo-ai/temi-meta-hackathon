@@ -47,6 +47,8 @@ export const config = {
     toolExecutor: env('TOOL_EXECUTOR', 'mock') as 'mock' | 'http',
     toolExecutorUrl: env('TOOL_EXECUTOR_URL'),
     toolExecutorKey: env('TOOL_EXECUTOR_KEY'),
+    /** Where the server keeps what Temi remembers about callers. Empty keeps it in memory only. */
+    memoryFile: env('MEMORY_FILE', 'data/memory.json'),
     /** Nigeria's fraud-check limits in naira; other countries set theirs in src/countries.ts. */
     guard: {
         stepUp: num('GUARD_STEP_UP_NGN', 50_000),

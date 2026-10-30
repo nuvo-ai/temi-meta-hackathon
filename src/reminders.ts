@@ -109,15 +109,6 @@ export class Reminders implements ToolExecutor {
     }
 }
 
-/** Sends reminder tools to the reminder store and everything else to the bank. */
-export class WithReminders implements ToolExecutor {
-    constructor(private readonly bank: ToolExecutor, readonly reminders: Reminders) {}
-
-    execute(name: string, args: Record<string, unknown>, ctx: ToolContext): Promise<unknown> {
-        return (REMINDER_TOOLS.has(name) ? this.reminders : this.bank).execute(name, args, ctx);
-    }
-}
-
 /**
  * Every 15s, phones whoever has a reminder due, through Twilio. The call
  * opens at /voice/reminder (src/voice.ts). Needs TWILIO_ACCOUNT_SID,
