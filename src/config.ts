@@ -51,6 +51,8 @@ export const config = {
     toolExecutorKey: env('TOOL_EXECUTOR_KEY'),
     /** Where the server keeps what Temi remembers about callers. Empty keeps it in memory only. */
     memoryFile: env('MEMORY_FILE', 'data/memory.json'),
+    /** Where the server keeps pending reminders, so a restart doesn't lose them. Empty keeps them in memory only. */
+    remindersFile: env('REMINDERS_FILE', 'data/reminders.json'),
     /** Nigeria's fraud-check limits in naira; other countries set theirs in src/countries.ts. */
     guard: {
         stepUp: num('GUARD_STEP_UP_NGN', 50_000),

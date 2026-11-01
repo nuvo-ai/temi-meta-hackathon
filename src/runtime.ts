@@ -18,11 +18,11 @@ export interface Runtime {
 /**
  * Wires Muse Spark, the fraud check and the tools from env config. Reminder
  * and memory tools run here; everything else goes to the bank.
- * Pass memoryFile to keep memories across restarts (the server does; evals don't).
+ * Pass memoryFile and remindersFile to keep them across restarts (the server does; evals don't).
  */
-export function createRuntime(executor?: ToolExecutor, opts: { memoryFile?: string } = {}): Runtime {
+export function createRuntime(executor?: ToolExecutor, opts: { memoryFile?: string; remindersFile?: string } = {}): Runtime {
     const bank = executor ?? (config.toolExecutor === 'http' ? new HttpExecutor(config.toolExecutorUrl, config.toolExecutorKey) : new MockBank());
-    const reminders = new Reminders();
+    const reminders = new Reminders(Date.now, opts.remindersFile);
     const memory = new Memory(opts.memoryFile);
     return {
         model: new MetaClient(providerConfig()),

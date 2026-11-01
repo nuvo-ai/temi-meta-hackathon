@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { config } from './config.js';
 import { COUNTRIES, DEFAULT_COUNTRY, type CountryCode } from './countries.js';
 import type { ToolContext, ToolExecutor } from './executors/types.js';
@@ -8,8 +10,9 @@ import type { ToolContext, ToolExecutor } from './executors/types.js';
  * it's due, Temi phones them, says what it's about, and they can act on it
  * in the same call ("yes, pay it now").
  *
- * Kept in memory: a restart forgets pending reminders. Production Temi keeps
- * them in its database and places the calls itself.
+ * With a file, reminders survive a restart: pending ones still go out, and
+ * one that was mid-call when the server stopped is tried again. Production
+ * Temi keeps them in its database and places the calls itself.
  */
 
 export const REMINDER_TOOLS = new Set(['set_reminder', 'list_reminders', 'cancel_reminder']);
@@ -66,7 +69,37 @@ export class Reminders implements ToolExecutor {
     private readonly items = new Map<string, Reminder>();
     private nextId = 1;
 
-    constructor(private readonly now: () => number = Date.now) {}
+    constructor(
+        private readonly now: () => number = Date.now,
+        private readonly file?: string,
+    ) {
+        if (file && existsSync(file)) {
+            const saved = JSON.parse(readFileSync(file, 'utf8')) as { nextId: number; items: Reminder[] };
+            this.nextId = saved.nextId;
+            for (const r of saved.items) {
+                // The server stopped while placing this call: try it again.
+                if (r.status === 'calling') r.status = 'pending';
+                this.items.set(r.id, r);
+            }
+        }
+    }
+
+    /** Writes every reminder to the file, if there is one. Written to a temp file first, so a crash mid-write can't corrupt it. */
+    private save(): void {
+        if (!this.file) return;
+        mkdirSync(dirname(this.file), { recursive: true });
+        const tmp = `${this.file}.tmp`;
+        writeFileSync(tmp, JSON.stringify({ nextId: this.nextId, items: [...this.items.values()] }, null, 2));
+        renameSync(tmp, this.file);
+    }
+
+    /** Records how a reminder call went. */
+    markCalled(id: string, ok: boolean): void {
+        const r = this.items.get(id);
+        if (!r) return;
+        r.status = ok ? 'called' : 'failed';
+        this.save();
+    }
 
     get(id: string): Reminder | undefined {
         return this.items.get(id);
@@ -86,6 +119,7 @@ export class Reminders implements ToolExecutor {
                 if (dueAt <= this.now()) return { error: `${when} has already passed; it is now ${localNow(country, this.now())}` };
                 const r: Reminder = { id: `r${this.nextId++}`, owner, callerNumber: ctx.callerNumber, country, what, when, dueAt, status: 'pending' };
                 this.items.set(r.id, r);
+                this.save();
                 return { status: 'set', id: r.id, what, when, delivery: ctx.callerNumber ? 'Temi will call the caller then' : 'saved' };
             }
             case 'list_reminders':
@@ -94,6 +128,7 @@ export class Reminders implements ToolExecutor {
                 const r = this.items.get(String(args['id'] ?? ''));
                 if (!r || r.owner !== owner || r.status !== 'pending') return { error: 'no such pending reminder; call list_reminders' };
                 r.status = 'cancelled';
+                this.save();
                 return { status: 'cancelled', id: r.id, what: r.what };
             }
             default:
@@ -105,6 +140,7 @@ export class Reminders implements ToolExecutor {
     takeDue(): Reminder[] {
         const due = [...this.items.values()].filter((r) => r.status === 'pending' && r.callerNumber && r.dueAt <= this.now());
         for (const r of due) r.status = 'calling';
+        if (due.length) this.save();
         return due;
     }
 }
@@ -131,10 +167,10 @@ export function startReminderCalls(reminders: Reminders, log: { info: (o: object
                     headers: { Authorization: auth, 'Content-Type': 'application/x-www-form-urlencoded' },
                     body,
                 });
-                r.status = res.ok ? 'called' : 'failed';
+                reminders.markCalled(r.id, res.ok);
                 log.info({ reminder: r.id, status: res.status }, 'reminder call placed');
             } catch (err) {
-                r.status = 'failed';
+                reminders.markCalled(r.id, false);
                 log.error({ reminder: r.id, err: err instanceof Error ? err.message : String(err) }, 'reminder call failed');
             }
         }
