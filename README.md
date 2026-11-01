@@ -4,7 +4,7 @@
 
 > 📞 **Call Temi:** [+1 (775) 587-2049](https://nuvo-ai.github.io/temi-meta-hackathon/call/) (tap to call)
 >
-> *For this hackathon, the demo line runs on a free Render instance, which spins down when no one has called for a while. If Temi takes a moment to answer, the first request may be delayed by 50 seconds or more while it wakes up; after that, calls are answered right away. Production Temi doesn't run on Render: it runs on its own AWS server.*
+> *The demo line runs on NuvoAI's own AWS server at [temi-demo.nuvoai.africa](https://temi-demo.nuvoai.africa), always on, separate from production Temi, which runs on its own AWS server.*
 
 **Temi AI** is a voice agent built by [NuvoAI](https://nuvoai.africa) that anyone can reach with a normal phone call or SMS: no smartphone, no data, no app. It speaks the way people actually talk, switching languages mid-sentence. By voice, it offers three kinds of AI service:
 
@@ -347,7 +347,7 @@ The seed cases in [evals/cases.json](evals/cases.json) are a starting point. The
 ## Notes
 
 - Muse Spark always reasons; `none` is rejected by the API. Conversation and the fraud check both use `minimal`. For conversation, `minimal` matched `low` on every eval case at about half the time to first word. For the fraud check, the caller waits while it runs, and how long it takes depends on how much it reasons, which grows on long, messy calls. At `medium` it took up to 9s on messy transcripts; at `minimal` it matched `medium` on the guard benchmark (every scam blocked, no legit payment blocked) at about 1–1.5s.
-- Memories are saved to `data/memory.json` (set `MEMORY_FILE`, or leave it empty to keep them in memory only), so they survive a restart. On Render that needs a persistent disk; production Temi keeps them in its database. Reminders are kept in memory for now.
+- Memories are saved to `data/memory.json` (set `MEMORY_FILE`, or leave it empty to keep them in memory only), so they survive a restart. On the demo server they're kept on its disk; production Temi keeps them in its database. Reminders are kept in memory for now.
 - Everything runs on Meta. The client in [src/model.ts](src/model.ts) calls the Meta Model API directly with `fetch`; there is no third-party AI SDK in `package.json`.
 - Fraud limits outside Nigeria are our first guesses, set in [src/countries.ts](src/countries.ts). A PIN is needed from KSh 5,000, GH₵500, TSh 100,000 and USh 150,000, and for a first payment to a new recipient from KSh 1,000, GH₵100, TSh 20,000 and USh 30,000. Nigeria's come from `.env`.
 - Speech recognition and voices for Swahili, Sheng, Twi, Ghanaian Pidgin and Luganda live in Temi's call server, not here. The brain is ready for them; the phone line still needs them.
