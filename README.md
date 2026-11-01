@@ -120,6 +120,7 @@ The Startup Track is judged on technical execution and whether it holds up in pr
 - **If the fraud check's Meta call fails or takes over 4s,** the payment needs the caller's PIN instead of going through unchecked.
 - **The rules and the model both check every payment,** and the stricter answer wins. A PIN clears a step-up for one payment only, never a block.
 - **If Meta is down mid-call,** Temi says sorry and asks again; nothing moves.
+- **A restart doesn't lose anything a caller set up:** pending reminders and memories are saved to disk and reloaded, and a reminder call cut off mid-way is placed again.
 - **Temi never announces an action before it runs:** the sentence is held back until a tool has actually run (0 of 74 action turns in the latest full run).
 
 **Money safety**
@@ -144,7 +145,7 @@ The Startup Track is judged on technical execution and whether it holds up in pr
 
 **Not production-grade yet**
 - **Banking runs against a mock bank here.** Production Temi plugs in its real backend through [src/executors/http.ts](src/executors/http.ts).
-- **Reminders are kept in memory,** so a restart forgets pending ones. Memories are saved to disk, on one server.
+- **Reminders and memories are saved to disk on one server.** They survive a restart, and a reminder call cut off by one is tried again. But they aren't in a shared database yet.
 - **It runs as a single instance.** Scaling out needs the call state, reminders and memories in a shared database, as production Temi already has.
 
 ## After the hackathon: action plan for NuvoAI.
@@ -280,7 +281,7 @@ What each case checks, how they're scored, and the commands for every report are
 ## Notes
 
 - Muse Spark always reasons; `none` is rejected by the API. Conversation and the fraud check both use `minimal`. For conversation, `minimal` matched `low` on every eval case at about half the time to first word. For the fraud check, the caller waits while it runs, and how long it takes depends on how much it reasons, which grows on long, messy calls. At `medium` it took up to 9s on messy transcripts; at `minimal` it matched `medium` on the guard benchmark (every scam blocked, no legit payment blocked) at about 1–1.5s.
-- Memories are saved to `data/memory.json` (set `MEMORY_FILE`, or leave it empty to keep them in memory only), so they survive a restart. On the demo server they're kept on its disk; production Temi keeps them in its database. Reminders are kept in memory for now.
+- Memories are saved to `data/memory.json` and pending reminders to `data/reminders.json` (set `MEMORY_FILE` or `REMINDERS_FILE`, or leave them empty to keep them in memory only), so both survive a restart. A reminder whose call was cut off by a restart is tried again. On the demo server they're kept on its disk; production Temi keeps them in its database.
 - Everything runs on Meta. The client in [src/model.ts](src/model.ts) calls the Meta Model API directly with `fetch`; there is no third-party AI SDK in `package.json`.
 - Fraud limits outside Nigeria are our first guesses, set in [src/countries.ts](src/countries.ts). A PIN is needed from KSh 5,000, GH₵500, TSh 100,000 and USh 150,000, and for a first payment to a new recipient from KSh 1,000, GH₵100, TSh 20,000 and USh 30,000. Nigeria's come from `.env`.
 - Speech recognition and voices for Swahili, Sheng, Twi, Ghanaian Pidgin and Luganda live in Temi's call server, not here. The brain is ready for them; the phone line still needs them.
