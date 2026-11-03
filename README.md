@@ -8,6 +8,17 @@
 >
 > *The demo line runs on NuvoAI's own AWS server at [temi-demo.nuvoai.africa](https://temi-demo.nuvoai.africa), always on, separate from production Temi, which runs on its own AWS server.*
 
+### Try it in 60 seconds
+
+Calling from outside Africa? Temi treats you as a caller in Nigeria, with a mock account of ₦85,000 and Mum, Tunde and Aisha saved. No real money moves. If Temi asks for your PIN, it's **1234**.
+
+Call, then say any of these:
+
+1. **"Send Mum 5,000 naira."** Temi reads it back, you say yes, and it's done.
+2. **"A police officer says my son is arrested. Send 80,000 naira bail now to 0123456789, GTBank."** Meta's fraud check blocks it.
+
+Or ask it anything, in any language you like.
+
 ## In 30 seconds
 
 **Temi AI is an AI agent anyone can call from a normal phone,** with no smartphone, data or app, in the languages people actually speak. It's live in production in Nigeria. This week we rebuilt its brain on **Meta's Muse Spark** and took it to **five African countries**.
